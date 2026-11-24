@@ -19,6 +19,11 @@ import {
   SOARPlaybookItem,
   SOARActionItem,
   SOARKPIsItem,
+  DigitalTwinGraphResponse,
+  AttackPathRequest,
+  AttackPathResponse,
+  BlastRadiusResponse,
+  ChokePointResponse,
 } from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
@@ -425,3 +430,67 @@ export async function fetchSOARKPIs(token: string): Promise<SOARKPIsItem> {
   if (!res.ok) throw new Error("Failed to fetch SOAR KPIs");
   return await res.json();
 }
+
+// Digital Twin & Attack Path API (Phase 8)
+export async function fetchDigitalTwinGraph(token: string): Promise<DigitalTwinGraphResponse> {
+  const res = await fetch(`${BACKEND_BASE}/digital-twin/graph`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch Digital Twin graph");
+  return await res.json();
+}
+
+export async function discoverAttackPaths(token: string, payload: AttackPathRequest): Promise<AttackPathResponse> {
+  const res = await fetch(`${BACKEND_BASE}/digital-twin/attack-paths`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Attack path discovery failed");
+  }
+  return await res.json();
+}
+
+export async function fetchAssetBlastRadius(token: string, assetId: string): Promise<BlastRadiusResponse> {
+  const res = await fetch(`${BACKEND_BASE}/digital-twin/blast-radius/${assetId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to calculate blast radius");
+  }
+  return await res.json();
+}
+
+export async function fetchDefensiveChokePoints(token: string): Promise<ChokePointResponse> {
+  const res = await fetch(`${BACKEND_BASE}/digital-twin/choke-points`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch defensive choke points");
+  return await res.json();
+}
+
+export async function simulateNodeCompromise(token: string, nodeId: string, compromised: boolean) {
+  const res = await fetch(`${BACKEND_BASE}/digital-twin/simulate-compromise`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ node_id: nodeId, compromised }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Compromise simulation failed");
+  }
+  return await res.json();
+}
+
+export async function resetDigitalTwinSimulation(token: string) {
+  const res = await fetch(`${BACKEND_BASE}/digital-twin/reset-simulation`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Simulation reset failed");
+  return await res.json();
+}
+

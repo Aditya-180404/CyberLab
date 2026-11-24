@@ -13,6 +13,7 @@ import { EndpointFleet } from "../components/agent/EndpointFleet";
 import { AssetInventory } from "../components/inventory/AssetInventory";
 import { SIEMDashboard } from "../components/siem/SIEMDashboard";
 import { IncidentResponseSOAR } from "../components/soar/IncidentResponseSOAR";
+import { DigitalTwinView } from "../components/digital_twin/DigitalTwinView";
 import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
@@ -92,6 +93,8 @@ export default function SOCDashboard() {
           <SIEMDashboard authToken={authToken} />
         ) : currentTab === "Incident Response" ? (
           <IncidentResponseSOAR authToken={authToken} />
+        ) : currentTab === "Digital Twin" ? (
+          <DigitalTwinView authToken={authToken} />
         ) : (
           <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
             {/* Welcome Banner */}

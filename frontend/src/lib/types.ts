@@ -317,3 +317,133 @@ export interface SOARKPIsItem {
   rolled_back: number;
   by_type: Record<string, number>;
 }
+
+// Digital Twin & Attack-Path Analysis Types (Phase 8)
+export interface DigitalTwinNode {
+  id: string;
+  label: string;
+  node_type: "ASSET" | "DEVICE" | "SEGMENT" | "ADVERSARY";
+  asset_type?: string;
+  device_type?: string;
+  ip_addresses: string[];
+  zone: "EXTERNAL" | "DMZ" | "INTERNAL" | "SECURE_VAULT" | "TRANSIT_ROUTER";
+  criticality: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  risk_score: number;
+  is_compromised: boolean;
+  status: string;
+  services?: Array<{ port: number; service: string }>;
+  security_tags?: string[];
+  position?: { x: number; y: number };
+}
+
+export interface DigitalTwinEdge {
+  id: string;
+  source: string;
+  target: string;
+  protocol: string;
+  ports: number[];
+  status: "OPEN" | "RESTRICTED" | "BLOCKED";
+  weight: number;
+  label?: string;
+}
+
+export interface DigitalTwinGraphSummary {
+  total_nodes: number;
+  total_edges: number;
+  compromised_nodes: number;
+  critical_nodes: number;
+  average_risk_score: number;
+  choke_points_count: number;
+  generated_at: string;
+}
+
+export interface DigitalTwinGraphResponse {
+  nodes: DigitalTwinNode[];
+  edges: DigitalTwinEdge[];
+  summary: DigitalTwinGraphSummary;
+}
+
+export interface AttackPathStep {
+  hop_number: number;
+  source_node_id: string;
+  source_label: string;
+  target_node_id: string;
+  target_label: string;
+  technique_id: string;
+  technique_name: string;
+  tactic: string;
+  protocol: string;
+  port?: number;
+  risk_weight: number;
+  description: string;
+}
+
+export interface AttackPathItem {
+  path_id: string;
+  node_sequence: string[];
+  node_labels: string[];
+  hops: number;
+  cumulative_risk: number;
+  viability: "HIGH" | "MEDIUM" | "LOW";
+  steps: AttackPathStep[];
+  choke_point_node_ids: string[];
+  mitigation_summary: string;
+}
+
+export interface AttackPathRequest {
+  source_node_id: string;
+  target_node_id: string;
+  max_hops?: number;
+}
+
+export interface AttackPathResponse {
+  source_node_id: string;
+  target_node_id: string;
+  total_paths_found: number;
+  shortest_path_hops: number;
+  recommended_choke_point?: string;
+  paths: AttackPathItem[];
+}
+
+export interface ReachableAssetDetail {
+  node_id: string;
+  label: string;
+  node_type: string;
+  zone: string;
+  criticality: string;
+  risk_score: number;
+  hops_away: number;
+  impact_summary: string;
+}
+
+export interface BlastRadiusResponse {
+  node_id: string;
+  node_label: string;
+  blast_score: number;
+  total_reachable_nodes: number;
+  reachable_by_criticality: Record<string, number>;
+  reachable_by_zone: Record<string, number>;
+  reachable_assets: ReachableAssetDetail[];
+  containment_recommendation: string;
+  playbook_to_execute?: string;
+}
+
+export interface ChokePointItem {
+  node_id: string;
+  label: string;
+  node_type: string;
+  zone: string;
+  betweenness_centrality: number;
+  paths_intercepted_pct: number;
+  critical_assets_shielded: number;
+  risk_level: string;
+  recommendation: string;
+  suggested_action: string;
+}
+
+export interface ChokePointResponse {
+  choke_points: ChokePointItem[];
+  top_recommended_node_id?: string;
+  summary: string;
+}
+

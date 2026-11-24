@@ -4,6 +4,60 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 8: Digital Twin & Attack-Path Analysis Engine] - 2026-11-24
+
+### Added
+- **Digital Twin & Network Graph Engine (`backend/app/digital_twin/`)**:
+  - `DigitalTwinGraphEngine` (`graph_engine.py`): Real-time NetworkX directed multigraph (`DiGraph`) modeling the enterprise and lab cybersecurity topology.
+  - Multi-Zone Architecture Ingestion:
+    - `EXTERNAL / WAN`: Threat actor entrypoints (e.g. `node-adversary-ext-01`, 198.51.100.50).
+    - `TRANSIT_ROUTER / PERIMETER`: Edge firewalls and core transit routers (`node-perimeter-fw-01`, `node-core-router-01`).
+    - `DMZ`: Public services (`node-dmz-web-proxy-01`, 10.10.10.15).
+    - `INTERNAL LAN`: Discovered VMware virtual machines (`Metasploitable2-Linux`, `Parrot`, `Opensence`), Linux agents, and simulated endpoints.
+    - `SECURE_VAULT`: Crown Jewel assets (`node-crown-jewel-db-vault`, 10.10.30.50, PostgreSQL/MySQL credentials and secrets).
+  - Telemetry & State Synchronization: Dynamically reads active SIEM incidents (`SecurityIncident`) and high-severity detections (`SecurityAlert`) to mark compromised nodes in real time.
+- **Attack-Path Discovery & MITRE ATT&CK Mapping**:
+  - Multi-hop traversal calculation: Identifies all viable attack paths between untrusted ingress nodes and critical internal assets using NetworkX `all_simple_paths` and Dijkstra shortest path.
+  - Step-by-step MITRE ATT&CK technique mapping:
+    - Ingress: `T1190` (*Exploit Public-Facing Application*)
+    - Evasion: `T1562.001` (*Disable or Evade Security Tools*)
+    - Lateral Movement: `T1021.004` (*SSH Remote Services*), `T1046` (*Network Service Discovery*)
+    - Privilege Escalation: `T1068` (*Exploitation for Privilege Escalation*), `T1548.003` (*Sudo and Sudo Caching*)
+    - Target Impact: `T1003.008` (*/etc/shadow & Credential Vault Access*)
+  - Cumulative path risk scoring (0–100%) and viability classification (`HIGH`, `MEDIUM`, `LOW`).
+- **Blast-Radius Quantification**:
+  - Downstream reachability via single-source shortest path traversal (`nx.single_source_shortest_path_length`).
+  - Weighted blast score formula (0–100) factoring reachable asset criticality (`CRITICAL`=40, `HIGH`=25, `MEDIUM/LOW`=10) and proximity distance.
+  - Automated containment recommendations integrated with SOAR playbooks (`playbook-host-quarantine`, `playbook-block-attacker-ip`).
+- **Defensive Choke-Point Optimization**:
+  - NetworkX **Betweenness Centrality** calculation ranking transit nodes and cut vertices.
+  - Quantifies paths intercepted % and critical assets shielded.
+  - Concrete defensive suggestions (`ENFORCE_FIREWALL_FILTER`, `DEPLOY_AGENT_EDR`).
+- **Dynamic What-If Compromise Simulation**:
+  - In-memory simulation controls (`simulate_compromise`, `reset_simulation`) enabling operators to test hypothetical compromise scenarios and re-evaluate attack paths and blast radius in real time.
+- **REST API Endpoints (`backend/app/api/v1/digital_twin.py`)**:
+  - `GET /api/v1/digital-twin/graph`: Full topological graph nodes and edges.
+  - `POST /api/v1/digital-twin/attack-paths`: Discovers ranked attack paths.
+  - `GET /api/v1/digital-twin/blast-radius/{asset_id}`: Evaluates downstream impact.
+  - `GET /api/v1/digital-twin/choke-points`: Identifies optimal defensive bottlenecks.
+  - `POST /api/v1/digital-twin/simulate-compromise`: Toggles transient compromise for what-if modeling.
+  - `POST /api/v1/digital-twin/reset-simulation`: Clears all transient compromise states.
+- **Frontend Digital Twin Console (`frontend/src/components/digital_twin/DigitalTwinView.tsx`)**:
+  - KPI Bar: Total Nodes, Directed Edges, Compromised Entities, Crown Jewels, Avg Risk, Choke Points.
+  - 4 Interactive Sub-Views:
+    1. *Attack Path Discovery*: Interactive source/target selectors, viable path vector list, and step-by-step MITRE ATT&CK progression cards.
+    2. *Blast Radius Analyzer*: Selected asset blast score gauge (0–100%), downstream reachability breakdown, and target asset table.
+    3. *Defensive Choke Points*: Centrality-ranked cards with paths cut %, critical assets shielded, and action pills.
+    4. *Topological Twin Map*: Tiered architectural zone columns (EXTERNAL, TRANSIT, DMZ, INTERNAL, SECURE VAULT), live node status indicators, and node inspector drawer with "Simulate Compromise" toggle.
+  - Navigation updated to `v0.8` with `Digital Twin` set to `ACTIVE`.
+- **Automated Tests (`backend/tests/test_digital_twin.py`)**:
+  - 7 comprehensive tests verifying graph construction, attack path discovery, error handling, blast radius, choke points, what-if simulation, and REST API endpoints.
+  - Full backend test suite expanded to **52 passing tests**.
+- **Documentation**:
+  - `documentation/DIGITAL_TWIN.md`: Complete technical specification of the Digital Twin engine, mathematical formulations, MITRE mappings, and API endpoints.
+
+---
+
 ## [Phase 7: Security Orchestration, Automation & Response (SOAR)] - 2026-11-24
 
 ### Added
