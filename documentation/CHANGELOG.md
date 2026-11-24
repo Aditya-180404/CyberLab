@@ -4,6 +4,42 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 11: Vulnerability Management & Asset Risk Scoring Engine] - 2026-11-24
+
+### Added
+- **Vulnerability Management & CVE Engine (`backend/app/vulnerability/`)**:
+  - `VulnerabilityEngine` (`engine.py`): Ingests canonical CVE definitions with CVSS v3.1 scoring, affected products, and remediation advisories.
+  - Automated Service-to-Vulnerability Matching: Correlates discovered listening ports, software banners, operating system versions, and vulnerable asset tags against known CVEs.
+  - Dynamic Asset Risk Scoring: Continuously recalibrates composite asset posture risk (0–100) combining CVSS severity weights (Critical=+25, High=+15, Medium=+8), exposure modifiers (Public=+20, DMZ=+10), and asset criticality (Critical=+20, High=+10).
+  - Remediation & Risk Reduction Tracking: Transitions findings through `OPEN` $\to$ `IN_REMEDIATION` $\to$ `MITIGATED` / `ACCEPTED_RISK`. Mitigating vulnerabilities instantly recalculates asset risk downward.
+  - Pre-seeded Canonical CVE Catalog: Ingested definitions for `CVE-2011-2523` (vsftpd 2.3.4 backdoor), `CVE-2007-2447` (Samba MS-RPC), `CVE-2004-2687` (distcc RCE), `CVE-2008-0166` (Debian OpenSSH weak keys), `CVE-2007-6750` (Apache Slowloris), `CVE-2014-0160` (OpenSSL Heartbleed), and `CVE-2021-44228` (Log4Shell).
+- **Relational Models & Schemas (`backend/app/models/vulnerability.py`, `backend/app/schemas/vulnerability.py`)**:
+  - `Vulnerability`: Entity storing CVE ID, title, description, CVSS v3.1 score, severity, affected product/versions, port hints, and remediation advisory.
+  - `AssetVulnerability`: Association table tracking findings per asset, detected services, status (`OPEN`, `IN_REMEDIATION`, `MITIGATED`, `ACCEPTED_RISK`), discovery/remediation timestamps, and notes.
+  - Pydantic v2 schemas: `VulnerabilityResponse`, `AssetVulnerabilityItem`, `AssetVulnerabilitySummary`, `ScanAssetsRequest`, `ScanResultResponse`, `RemediateVulnerabilityRequest`, `VulnerabilityKPIs`.
+- **REST API Endpoints (`backend/app/api/v1/vulnerability.py`)**:
+  - `GET /api/v1/vulnerabilities`: Lists canonical CVEs with search and severity filtering.
+  - `GET /api/v1/vulnerabilities/summary`: Per-asset vulnerability rollups across the fleet.
+  - `POST /api/v1/vulnerabilities/scan`: Dispatches vulnerability scan on all assets or single asset.
+  - `GET /api/v1/vulnerabilities/assets/{asset_id}`: Retrieves detailed vulnerability findings for an asset.
+  - `POST /api/v1/vulnerabilities/remediate`: Updates remediation status and recalculates asset risk.
+  - `GET /api/v1/vulnerabilities/kpis`: Fleet-wide vulnerability and remediation KPIs.
+- **Frontend Vulnerability Management Workspace (`frontend/src/components/vulnerability/VulnerabilityManagement.tsx`)**:
+  - KPI Bar: Asset Findings (Open count), Critical Severity (CVSS $\ge$ 9.0), Remediation Progress (%), Average CVSS Score.
+  - "Run Fleet Vulnerability Scan" one-click action.
+  - 3 Dedicated Sub-Views:
+    1. *Asset Risk & Findings*: Fleet posture table with criticality and risk meters, plus Asset Findings Drawer showing detected CVEs and quick remediation buttons.
+    2. *CVE Catalog & Advisories*: Searchable CVE library with severity filters, CVSS score pills, and remediation advisories.
+    3. *Remediation Queue*: Active patch tracking console with status transition buttons ("Mark In-Progress", "Verify & Mitigate").
+  - Navigation updated to platform version **`v0.10`** with `Vulnerabilities` marked **`ACTIVE`**.
+- **Automated Tests (`backend/tests/test_vulnerability.py`)**:
+  - 6 comprehensive tests verifying CVE seeding, service matching, asset vulnerability scanning, remediation state transitions, risk score reduction, and REST API endpoints.
+  - Full backend test suite expanded to **65 passing tests**.
+- **Documentation**:
+  - `documentation/VULNERABILITY_MANAGEMENT.md`: Full technical specification of the CVSS v3.1 risk engine, service matching algorithm, and remediation lifecycle.
+
+---
+
 ## [Phase 9-10: Purple-Team Validation Studio & Attack Simulation] - 2026-11-24
 
 ### Added

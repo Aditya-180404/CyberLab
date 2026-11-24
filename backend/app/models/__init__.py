@@ -21,6 +21,9 @@ from app.models.purple_team import (
     SimulationScenario, SimulationExecution, ValidationResult,
     SimulationStatus, DetectionStatus
 )
+from app.models.vulnerability import (
+    Vulnerability, AssetVulnerability, VulnerabilitySeverity, VulnerabilityStatus
+)
 
 __all__ = [
     "Organization", "Site", "User", "UserRole", "AuditLog",
@@ -32,5 +35,6 @@ __all__ = [
     "EventCategory", "EventSeverity", "AlertStatus", "IncidentStatus",
     "SOARPlaybook", "SOARAction", "ActionType", "ActionStatus",
     "SimulationScenario", "SimulationExecution", "ValidationResult",
-    "SimulationStatus", "DetectionStatus"
+    "SimulationStatus", "DetectionStatus",
+    "Vulnerability", "AssetVulnerability", "VulnerabilitySeverity", "VulnerabilityStatus"
 ]

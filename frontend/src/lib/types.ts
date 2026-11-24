@@ -528,4 +528,73 @@ export interface PurpleTeamKPIsItem {
   by_tactic_efficacy: Record<string, number>;
 }
 
+// Vulnerability Management & Risk Engine Types (Phase 11)
+export interface VulnerabilityItem {
+  id: string;
+  cve_id: string;
+  title: string;
+  description: string;
+  cvss_score: number;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  affected_product: string;
+  affected_versions?: string;
+  port_hint?: number;
+  cwe_id?: string;
+  remediation_advisory?: string;
+  created_at: string;
+}
+
+export interface AssetVulnerabilityItem {
+  id: string;
+  asset_id: string;
+  asset_name?: string;
+  vulnerability_id: string;
+  cve_id: string;
+  title: string;
+  cvss_score: number;
+  severity: string;
+  status: "OPEN" | "IN_REMEDIATION" | "MITIGATED" | "ACCEPTED_RISK";
+  detected_service?: string;
+  discovered_at: string;
+  remediated_at?: string;
+  remediation_notes?: string;
+  remediated_by?: string;
+}
+
+export interface AssetVulnerabilitySummary {
+  asset_id: string;
+  asset_name: string;
+  asset_type: string;
+  criticality: string;
+  risk_score: number;
+  total_vulns: number;
+  critical_count: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+  open_count: number;
+  mitigated_count: number;
+}
+
+export interface ScanResultResponse {
+  scan_id: string;
+  scanned_assets_count: number;
+  discovered_vulnerabilities_count: number;
+  new_findings_count: number;
+  scan_timestamp: string;
+  summary: string;
+}
+
+export interface VulnerabilityKPIsItem {
+  total_vulnerabilities_tracked: number;
+  total_asset_findings: number;
+  open_findings: number;
+  mitigated_findings: number;
+  critical_severity_count: number;
+  high_severity_count: number;
+  remediation_progress_pct: number;
+  average_cvss_score: number;
+}
+
+
 

@@ -37,6 +37,10 @@ from app.schemas.purple_team import (
     SimulationExecutionResponse, RunCampaignRequest, RunCampaignResponse,
     MitreCoverageItem, MitreCoverageResponse, PurpleTeamKPIs
 )
+from app.schemas.vulnerability import (
+    VulnerabilityResponse, AssetVulnerabilityItem, AssetVulnerabilitySummary,
+    ScanAssetsRequest, ScanResultResponse, RemediateVulnerabilityRequest, VulnerabilityKPIs
+)
 
 __all__ = [
     "LoginRequest", "TokenResponse", "TokenPayload",
@@ -60,5 +64,7 @@ __all__ = [
     "SOARApprovalDecisionRequest", "SOARKPIs",
     "SimulationScenarioResponse", "ExecuteScenarioRequest", "ValidationResultResponse",
     "SimulationExecutionResponse", "RunCampaignRequest", "RunCampaignResponse",
-    "MitreCoverageItem", "MitreCoverageResponse", "PurpleTeamKPIs"
+    "MitreCoverageItem", "MitreCoverageResponse", "PurpleTeamKPIs",
+    "VulnerabilityResponse", "AssetVulnerabilityItem", "AssetVulnerabilitySummary",
+    "ScanAssetsRequest", "ScanResultResponse", "RemediateVulnerabilityRequest", "VulnerabilityKPIs"
 ]

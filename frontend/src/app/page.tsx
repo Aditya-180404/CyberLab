@@ -15,6 +15,7 @@ import { SIEMDashboard } from "../components/siem/SIEMDashboard";
 import { IncidentResponseSOAR } from "../components/soar/IncidentResponseSOAR";
 import { DigitalTwinView } from "../components/digital_twin/DigitalTwinView";
 import { PurpleTeamStudio } from "../components/purple_team/PurpleTeamStudio";
+import { VulnerabilityManagement } from "../components/vulnerability/VulnerabilityManagement";
 import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
@@ -98,6 +99,8 @@ export default function SOCDashboard() {
           <DigitalTwinView authToken={authToken} />
         ) : currentTab === "Purple-Team Studio" ? (
           <PurpleTeamStudio authToken={authToken} />
+        ) : currentTab === "Vulnerabilities" ? (
+          <VulnerabilityManagement authToken={authToken} />
         ) : (
           <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
             {/* Welcome Banner */}

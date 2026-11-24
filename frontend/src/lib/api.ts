@@ -29,6 +29,11 @@ import {
   RunCampaignResponse,
   MitreCoverageResponse,
   PurpleTeamKPIsItem,
+  VulnerabilityItem,
+  AssetVulnerabilityItem,
+  AssetVulnerabilitySummary,
+  ScanResultResponse,
+  VulnerabilityKPIsItem,
 } from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
@@ -568,5 +573,78 @@ export async function fetchPurpleTeamKPIs(token: string): Promise<PurpleTeamKPIs
   if (!res.ok) throw new Error("Failed to fetch Purple-Team KPIs");
   return await res.json();
 }
+
+// Vulnerability Management & CVE API (Phase 11)
+export async function fetchVulnerabilityCatalog(
+  token: string,
+  search?: string,
+  severity?: string
+): Promise<VulnerabilityItem[]> {
+  const query = new URLSearchParams();
+  if (search) query.set("search", search);
+  if (severity && severity !== "ALL") query.set("severity", severity);
+
+  const res = await fetch(`${BACKEND_BASE}/vulnerabilities?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch vulnerability catalog");
+  return await res.json();
+}
+
+export async function fetchFleetVulnerabilitySummary(token: string): Promise<AssetVulnerabilitySummary[]> {
+  const res = await fetch(`${BACKEND_BASE}/vulnerabilities/summary`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch fleet vulnerability summary");
+  return await res.json();
+}
+
+export async function runVulnerabilityScan(token: string, assetId?: string): Promise<ScanResultResponse> {
+  const res = await fetch(`${BACKEND_BASE}/vulnerabilities/scan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ asset_id: assetId }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Vulnerability scan failed");
+  }
+  return await res.json();
+}
+
+export async function fetchAssetVulnerabilities(token: string, assetId: string): Promise<AssetVulnerabilityItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/vulnerabilities/assets/${assetId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch asset vulnerabilities");
+  return await res.json();
+}
+
+export async function remediateVulnerability(
+  token: string,
+  assetVulnId: string,
+  status: string,
+  notes?: string
+): Promise<AssetVulnerabilityItem> {
+  const res = await fetch(`${BACKEND_BASE}/vulnerabilities/remediate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ asset_vulnerability_id: assetVulnId, status, notes }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Remediation update failed");
+  }
+  return await res.json();
+}
+
+export async function fetchVulnerabilityKPIs(token: string): Promise<VulnerabilityKPIsItem> {
+  const res = await fetch(`${BACKEND_BASE}/vulnerabilities/kpis`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch vulnerability KPIs");
+  return await res.json();
+}
+
 
 

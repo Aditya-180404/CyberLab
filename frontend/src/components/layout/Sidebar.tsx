@@ -14,6 +14,7 @@ import {
   History,
   Settings,
   Cpu,
+  AlertTriangle,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Incident Response", phase: "Phase 7", icon: Crosshair, status: "ACTIVE" },
   { name: "Digital Twin", phase: "Phase 8", icon: GitBranch, status: "ACTIVE" },
   { name: "Purple-Team Studio", phase: "Phase 9-10", icon: ShieldCheck, status: "ACTIVE" },
+  { name: "Vulnerabilities", phase: "Phase 11", icon: AlertTriangle, status: "ACTIVE" },
   { name: "Audit Trail", phase: "Phase 1", icon: History, status: "ACTIVE" },
   { name: "Settings & RBAC", phase: "Phase 1", icon: Settings, status: "ACTIVE" },
 ];
@@ -50,7 +52,7 @@ export function Sidebar({ currentTab, onSelectTab }: { currentTab: string; onSel
             <div className="font-bold tracking-wider text-slate-100 flex items-center space-x-2">
               <span>CYBERLAB</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
-                v0.9
+                v0.10
               </span>
             </div>
             <p className="text-[11px] text-slate-400 tracking-tight">Security Platform</p>

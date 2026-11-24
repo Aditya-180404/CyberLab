@@ -21,7 +21,7 @@ const ROADMAP: PhaseItem[] = [
   { id: 8, name: "Digital Twin & Attack Paths", status: "COMPLETE", summary: "NetworkX topological graphs, reachability, blast-radius analysis" },
   { id: 9, name: "Attack Simulation Studio", status: "COMPLETE", summary: "Safe, bounded offensive scenarios against authorized targets" },
   { id: 10, name: "Purple-Team Validation", status: "COMPLETE", summary: "Continuous control validation, defensive efficacy scoring" },
-  { id: 11, name: "Vulnerability Management", status: "PLANNED", summary: "CVE ingestion, CVSS asset risk scoring, remediation tracking" },
+  { id: 11, name: "Vulnerability Management", status: "COMPLETE", summary: "CVE ingestion, CVSS asset risk scoring, remediation tracking" },
   { id: 12, name: "Multi-Site Enterprise Fleet", status: "PLANNED", summary: "Multi-site isolation, PostgreSQL migration, hardened fleet control" },
 ];
 
@@ -33,7 +33,7 @@ export function ModuleMatrixCard() {
           Architecture & Roadmap Execution Matrix
         </h2>
         <span className="text-xs font-mono text-cyan-400">
-          Phase 9-10 Active (10/12)
+          Phase 11 Active (11/12)
         </span>
       </div>
 
