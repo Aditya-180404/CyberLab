@@ -4,6 +4,37 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 5: Asset Inventory & Deep Monitoring Engine] - 2026-11-24
+
+### Added
+- **Unified Asset Inventory Engine (`backend/app/inventory/asset_manager.py`)**:
+  - `AssetManager`: Harmonizes and deduplicates entities across VMware virtual machines, distributed Linux agents, and simulated network topology nodes.
+  - Dynamic Security Risk Scoring (0 to 100): Weighted formula accounting for known vulnerable assets (Metasploitable +55), bridged exposure (+25), active runtime state (+5), FIM integrity violations (+15 to +30), unencrypted legacy services (FTP, Telnet, HTTP +10 each), and quarantine states.
+  - Multi-source entity reconciliation: Automatically extracts virtual network adapters, MAC addresses, IP addresses, listening network daemons, and hardware specs.
+- **Relational Models & Schemas (`backend/app/models/asset.py`, `backend/app/schemas/asset.py`)**:
+  - `Asset`: Canonical entity storing system fingerprints, business criticality (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), risk score, exposure, services JSON, security tags, and foreign key linkages to VMs, Agents, and Network Devices.
+  - Pydantic v2 schemas: `AssetResponse`, `AssetDetailResponse`, `AssetCriticalityUpdateRequest`, `AssetSyncResult`, `AssetInventoryKPIs`.
+- **REST API Endpoints (`backend/app/api/v1/assets.py`)**:
+  - `GET /api/v1/assets`: Searchable and filterable asset catalog (filter by `asset_type`, `criticality`, `min_risk`, or hostname/IP query).
+  - `GET /api/v1/assets/kpis`: Aggregated fleet metrics, average risk score, high-risk asset count, and breakdown by category.
+  - `POST /api/v1/assets/sync`: Multi-source synchronization orchestrator importing and updating all platform entities with audit logging.
+  - `GET /api/v1/assets/{id}`: Deep posture inspection returning underlying VM configurations, agent telemetry, and listening services.
+  - `PUT /api/v1/assets/{id}/criticality`: Analyst reclassification of business criticality tier and network exposure.
+- **SOC Asset Inventory Dashboard (`frontend/src/components/inventory/AssetInventory.tsx`)**:
+  - Fleet KPI cards: Total assets, average risk score with color-coded gauge, high-risk asset counter, and critical asset counter.
+  - Real-time search by hostname, IP address, or OS distribution.
+  - Multi-dimensional filter pills: Asset class (`All`, `VMs`, `Agents`, `Simulated`) and Criticality tier (`All`, `Critical`, `High`, `Medium`, `Low`).
+  - Interactive Asset Table: Shows OS details, IP addresses, visual risk meter, dynamic threat tags (`VULNERABLE_TARGET`, `BRIDGED_ADAPTER`, `EDR_MONITORED`, `FIM_ALERT_ACTIVE`), and inline criticality selector.
+  - Deep Posture Details Modal: Hardware profile, open listening sockets table, underlying hypervisor or agent details, and risk factors summary.
+  - One-click "Sync Multi-Source Assets" button.
+- **Automated Tests (`backend/tests/test_asset_inventory.py`)**:
+  - 4 comprehensive tests verifying multi-source entity synchronization, risk calculation for vulnerable targets, filtering, search, KPI aggregations, and RBAC criticality updates.
+  - Full backend test suite expanded to 34 passing tests.
+- **Documentation**:
+  - `documentation/ASSET_INVENTORY.md`: Architecture guide, data model specification, scoring formula, and API reference.
+
+---
+
 ## [Phase 4: Distributed Linux Agent Platform] - 2026-11-24
 
 ### Added

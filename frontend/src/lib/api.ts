@@ -7,6 +7,10 @@ import {
   VMDiscoveryResult,
   AgentItem,
   AgentDetailItem,
+  AssetItem,
+  AssetDetailItem,
+  AssetSyncResult,
+  AssetKPIs,
 } from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
@@ -191,6 +195,70 @@ export async function revokeAgent(token: string, agentId: string): Promise<Agent
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.detail || "Failed to revoke agent");
+  }
+  return await res.json();
+}
+
+// Unified Asset Inventory API (Phase 5)
+export async function fetchAssets(
+  token: string,
+  params?: { asset_type?: string; criticality?: string; min_risk?: number; search?: string }
+): Promise<AssetItem[]> {
+  const query = new URLSearchParams();
+  if (params?.asset_type && params.asset_type !== "ALL") query.set("asset_type", params.asset_type);
+  if (params?.criticality && params.criticality !== "ALL") query.set("criticality", params.criticality);
+  if (params?.min_risk) query.set("min_risk", params.min_risk.toString());
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${BACKEND_BASE}/assets?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch assets");
+  return await res.json();
+}
+
+export async function fetchAssetKPIs(token: string): Promise<AssetKPIs> {
+  const res = await fetch(`${BACKEND_BASE}/assets/kpis`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch asset KPIs");
+  return await res.json();
+}
+
+export async function syncAssets(token: string): Promise<AssetSyncResult> {
+  const res = await fetch(`${BACKEND_BASE}/assets/sync`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to synchronize assets");
+  }
+  return await res.json();
+}
+
+export async function fetchAssetDetail(token: string, assetId: string): Promise<AssetDetailItem> {
+  const res = await fetch(`${BACKEND_BASE}/assets/${assetId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch asset details");
+  return await res.json();
+}
+
+export async function updateAssetCriticality(
+  token: string,
+  assetId: string,
+  criticality: string,
+  exposure?: string
+): Promise<AssetItem> {
+  const res = await fetch(`${BACKEND_BASE}/assets/${assetId}/criticality`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ criticality, exposure }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to update asset criticality");
   }
   return await res.json();
 }

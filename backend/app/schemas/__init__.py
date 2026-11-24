@@ -20,6 +20,10 @@ from app.schemas.agent import (
     AgentRegisterRequest, AgentRegisterResponse, AgentHeartbeatRequest, AgentHeartbeatResponse,
     AgentTelemetryBatch, AgentResponse, AgentDetailResponse
 )
+from app.schemas.asset import (
+    AssetResponse, AssetDetailResponse, AssetCriticalityUpdateRequest,
+    AssetSyncResult, AssetInventoryKPIs
+)
 
 __all__ = [
     "LoginRequest", "TokenResponse", "TokenPayload",
@@ -34,5 +38,7 @@ __all__ = [
     "NetworkAdapterInfo", "VMRegisterRequest", "VMDiscoverRequest", "VMPowerRequest", "VMAssociateSegmentRequest",
     "VMResponse", "VMDiscoveryResult",
     "AgentRegisterRequest", "AgentRegisterResponse", "AgentHeartbeatRequest", "AgentHeartbeatResponse",
-    "AgentTelemetryBatch", "AgentResponse", "AgentDetailResponse"
+    "AgentTelemetryBatch", "AgentResponse", "AgentDetailResponse",
+    "AssetResponse", "AssetDetailResponse", "AssetCriticalityUpdateRequest",
+    "AssetSyncResult", "AssetInventoryKPIs"
 ]

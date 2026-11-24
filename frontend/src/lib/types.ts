@@ -133,3 +133,61 @@ export interface AgentDetailItem extends AgentItem {
   pending_commands: string[];
   latest_telemetry?: AgentLatestTelemetry;
 }
+
+// Unified Asset Inventory Types (Phase 5)
+export interface AssetServiceItem {
+  port: number;
+  protocol: string;
+  service?: string;
+  state: string;
+}
+
+export interface AssetItem {
+  id: string;
+  organization_id: string;
+  site_id?: string;
+  name: string;
+  asset_type: "VIRTUAL_MACHINE" | "AGENT_HOST" | "SIMULATED_DEVICE" | "PHYSICAL_HOST";
+  ip_addresses: string[];
+  mac_addresses: string[];
+  os_family: string;
+  os_version: string;
+  kernel_version?: string;
+  criticality: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  risk_score: number;
+  exposure: "INTERNAL" | "ISOLATED" | "DMZ" | "PUBLIC";
+  status: "ACTIVE" | "INACTIVE" | "QUARANTINED" | "DECOMMISSIONED";
+  virtual_machine_id?: string;
+  agent_id?: string;
+  network_device_id?: string;
+  hardware_specs?: Record<string, any>;
+  services?: AssetServiceItem[];
+  software_inventory?: Array<Record<string, any>>;
+  security_tags: string[];
+  last_seen: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssetDetailItem extends AssetItem {
+  vm_details?: Record<string, any>;
+  agent_details?: Record<string, any>;
+  device_details?: Record<string, any>;
+}
+
+export interface AssetSyncResult {
+  total_synced: number;
+  vm_assets_synced: number;
+  agent_assets_synced: number;
+  simulated_assets_synced: number;
+  message: string;
+}
+
+export interface AssetKPIs {
+  total_assets: number;
+  average_risk_score: number;
+  high_risk_count: number;
+  critical_assets_count: number;
+  by_type: Record<string, number>;
+  by_criticality: Record<string, number>;
+}
