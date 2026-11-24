@@ -16,6 +16,7 @@ from app.models.siem import (
     SecurityEvent, SecurityAlert, SecurityIncident,
     EventCategory, EventSeverity, AlertStatus, IncidentStatus
 )
+from app.models.soar import SOARPlaybook, SOARAction, ActionType, ActionStatus
 
 __all__ = [
     "Organization", "Site", "User", "UserRole", "AuditLog",
@@ -24,5 +25,6 @@ __all__ = [
     "Agent", "AgentStatus", "AgentTelemetry",
     "Asset", "AssetType", "AssetCriticality", "AssetStatus",
     "SecurityEvent", "SecurityAlert", "SecurityIncident",
-    "EventCategory", "EventSeverity", "AlertStatus", "IncidentStatus"
+    "EventCategory", "EventSeverity", "AlertStatus", "IncidentStatus",
+    "SOARPlaybook", "SOARAction", "ActionType", "ActionStatus"
 ]

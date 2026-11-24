@@ -17,7 +17,7 @@ const ROADMAP: PhaseItem[] = [
   { id: 4, name: "Distributed Linux Agent", status: "COMPLETE", summary: "Standalone Python agent, TLS heartbeat, policy enforcement" },
   { id: 5, name: "Asset Inventory & Monitoring", status: "COMPLETE", summary: "Cross-platform asset sync, dynamic risk scoring, posture inspection" },
   { id: 6, name: "SIEM & Detection Engine", status: "COMPLETE", summary: "Event normalization, MITRE ATT&CK mapping, alert correlation" },
-  { id: 7, name: "Incident Response (SOAR)", status: "PLANNED", summary: "Host isolation, firewall blocking, approval workflows, rollback" },
+  { id: 7, name: "Incident Response (SOAR)", status: "COMPLETE", summary: "Playbook execution, approval gates, verified containment, rollback" },
   { id: 8, name: "Digital Twin & Attack Paths", status: "PLANNED", summary: "NetworkX topological graphs, reachability, blast-radius analysis" },
   { id: 9, name: "Attack Simulation Studio", status: "PLANNED", summary: "Safe, bounded offensive scenarios against authorized targets" },
   { id: 10, name: "Purple-Team Validation", status: "PLANNED", summary: "Continuous control validation, defensive efficacy scoring" },
@@ -33,7 +33,7 @@ export function ModuleMatrixCard() {
           Architecture & Roadmap Execution Matrix
         </h2>
         <span className="text-xs font-mono text-cyan-400">
-          Phase 6 Active (6/12)
+          Phase 7 Active (7/12)
         </span>
       </div>
 

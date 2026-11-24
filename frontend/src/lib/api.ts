@@ -16,6 +16,9 @@ import {
   SecurityIncidentItem,
   MitreMatrixSummaryItem,
   SIEMKPIsItem,
+  SOARPlaybookItem,
+  SOARActionItem,
+  SOARKPIsItem,
 } from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
@@ -334,5 +337,91 @@ export async function simulateAttackScenario(
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.detail || "Attack simulation failed");
   }
+  return await res.json();
+}
+
+// SOAR & Incident Response API (Phase 7)
+export async function fetchSOARPlaybooks(token: string): Promise<SOARPlaybookItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/soar/playbooks`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch SOAR playbooks");
+  return await res.json();
+}
+
+export async function executeSOARPlaybook(
+  token: string,
+  playbookId: string,
+  payload: { target_id: string; target_name?: string; target_type?: string; action_type: string; incident_id?: string }
+): Promise<SOARActionItem> {
+  const res = await fetch(`${BACKEND_BASE}/soar/playbooks/${playbookId}/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Playbook execution failed");
+  }
+  return await res.json();
+}
+
+export async function fetchSOARActions(
+  token: string,
+  params?: { status?: string; action_type?: string }
+): Promise<SOARActionItem[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "ALL") query.set("status", params.status);
+  if (params?.action_type) query.set("action_type", params.action_type);
+
+  const res = await fetch(`${BACKEND_BASE}/soar/actions?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch SOAR actions");
+  return await res.json();
+}
+
+export async function approveSOARAction(token: string, actionId: string): Promise<SOARActionItem> {
+  const res = await fetch(`${BACKEND_BASE}/soar/actions/${actionId}/approve`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Action approval failed");
+  }
+  return await res.json();
+}
+
+export async function rejectSOARAction(token: string, actionId: string, reason?: string): Promise<SOARActionItem> {
+  const res = await fetch(`${BACKEND_BASE}/soar/actions/${actionId}/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ reason }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Action rejection failed");
+  }
+  return await res.json();
+}
+
+export async function rollbackSOARAction(token: string, actionId: string): Promise<SOARActionItem> {
+  const res = await fetch(`${BACKEND_BASE}/soar/actions/${actionId}/rollback`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Rollback failed");
+  }
+  return await res.json();
+}
+
+export async function fetchSOARKPIs(token: string): Promise<SOARKPIsItem> {
+  const res = await fetch(`${BACKEND_BASE}/soar/kpis`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch SOAR KPIs");
   return await res.json();
 }

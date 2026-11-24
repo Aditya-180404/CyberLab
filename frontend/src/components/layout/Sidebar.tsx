@@ -30,7 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Endpoint Fleet", phase: "Phase 4", icon: Radio, status: "ACTIVE" },
   { name: "Asset Inventory", phase: "Phase 5", icon: Layers, status: "ACTIVE" },
   { name: "SIEM & Correlation", phase: "Phase 6", icon: FileSearch, status: "ACTIVE" },
-  { name: "Incident Response", phase: "Phase 7", icon: Crosshair, status: "PLANNED" },
+  { name: "Incident Response", phase: "Phase 7", icon: Crosshair, status: "ACTIVE" },
   { name: "Digital Twin", phase: "Phase 8", icon: GitBranch, status: "PLANNED" },
   { name: "Purple-Team Studio", phase: "Phase 9-10", icon: ShieldCheck, status: "PLANNED" },
   { name: "Audit Trail", phase: "Phase 1", icon: History, status: "ACTIVE" },
@@ -50,7 +50,7 @@ export function Sidebar({ currentTab, onSelectTab }: { currentTab: string; onSel
             <div className="font-bold tracking-wider text-slate-100 flex items-center space-x-2">
               <span>CYBERLAB</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
-                v0.6
+                v0.7
               </span>
             </div>
             <p className="text-[11px] text-slate-400 tracking-tight">Security Platform</p>

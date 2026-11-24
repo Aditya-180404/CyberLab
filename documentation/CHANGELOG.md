@@ -4,6 +4,47 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 7: Security Orchestration, Automation & Response (SOAR)] - 2026-11-24
+
+### Added
+- **SOAR Engine & Automated Containment (`backend/app/soar/`)**:
+  - `SOAREngine` (`engine.py`): Orchestrates automated and human-approved containment workflows across agents, virtual machines, and simulated network nodes.
+  - Action Types supported:
+    - `ISOLATE_HOST`: Quarantines compromised endpoint via EDR agent and virtual bridge/nftables filter.
+    - `RESTORE_HOST`: Re-opens network traffic and restores normal operating policy.
+    - `BLOCK_IP`: Drops ingress/egress from malicious attacker IP across perimeter filters.
+    - `UNBLOCK_IP`: Removes perimeter firewall drop rule.
+    - `SUSPEND_VM`: Suspends VMware Workstation guest via hypervisor CLI to freeze RAM state for forensics.
+    - `REVOKE_CREDENTIALS`: Scrambles authentication token hashes and disconnects compromised rogue agents.
+  - Human-in-the-Loop (HITL) Authorization Gates: High-impact disruptive operations queue in `PENDING_APPROVAL` status requiring explicit SOC Analyst / Admin signoff with audit logging.
+  - Post-Execution Automated Verification: Verifies that target entities successfully transitioned into the expected state (e.g. `AgentStatus.ISOLATED`).
+  - Non-Destructive State Rollback Engine: Every containment action can be cleanly reversed with a single click, restoring endpoints and powering suspended virtual machines back on.
+  - Default Playbook Library: Pre-configured playbooks for Endpoint Quarantine, Malicious IP Block, VM Emergency Suspend, and Credential Revocation.
+- **Relational Models & Schemas (`backend/app/models/soar.py`, `backend/app/schemas/soar.py`)**:
+  - `SOARPlaybook`: Entity tracking playbook name, trigger events, action types, and approval policy.
+  - `SOARAction`: Entity tracking action execution status, target entities, requesting users, approvers, verification details, and rollback states.
+  - Pydantic v2 schemas: `SOARPlaybookResponse`, `SOARActionCreateRequest`, `SOARActionResponse`, `SOARApprovalDecisionRequest`, `SOARKPIs`.
+- **REST API Endpoints (`backend/app/api/v1/soar.py`)**:
+  - `GET /api/v1/soar/playbooks`: Lists available playbooks, auto-seeding defaults if needed.
+  - `POST /api/v1/soar/playbooks/{id}/execute`: Triggers playbook execution, evaluating approval gates.
+  - `GET /api/v1/soar/actions`: Lists action history with execution and verification details.
+  - `POST /api/v1/soar/actions/{id}/approve`: Authorizes and executes pending containment action.
+  - `POST /api/v1/soar/actions/{id}/reject`: Rejects a pending containment action with an audit reason.
+  - `POST /api/v1/soar/actions/{id}/rollback`: Reverses an executed containment action.
+  - `GET /api/v1/soar/kpis`: Real-time response action metrics and pending queue count.
+- **Frontend Incident Response & SOAR Workspace (`frontend/src/components/soar/IncidentResponseSOAR.tsx`)**:
+  - Fleet KPI Cards: Total Response Actions, Pending Approvals (with animated alert pulse), Verified Actions, and Rolled-Back Actions.
+  - Human-in-the-Loop Authorization Queue: Interactive review panel allowing analysts to inspect pending actions and click "Authorize & Execute" or "Reject".
+  - Automated Playbook Catalog: Card grid displaying available containment playbooks with approval badges and one-click manual execution modal.
+  - Action History & Rollback Console: Complete audit log of executed actions with verification badges and one-click "Rollback Action" button.
+- **Automated Tests (`backend/tests/test_soar.py`)**:
+  - 6 comprehensive tests verifying playbook listing, approval gate enforcement, automated execution without approval, rejection with audit reason, rollback lifecycle, and SOAR KPIs.
+  - Full backend test suite expanded to 45 passing tests.
+- **Documentation**:
+  - `documentation/SOAR_ENGINE.md`: Full architectural specification of the SOAR pipeline, playbooks, approval governance, and rollback mechanics.
+
+---
+
 ## [Phase 6: SIEM, Detection Engine & MITRE ATT&CK Mapping] - 2026-11-24
 
 ### Added

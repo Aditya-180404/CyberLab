@@ -28,6 +28,10 @@ from app.schemas.siem import (
     SecurityEventCreate, SecurityEventResponse, SecurityAlertResponse, SecurityIncidentResponse,
     MitreTechniqueCount, MitreMatrixSummary, SIEMKPIs, AttackSimulationRequest
 )
+from app.schemas.soar import (
+    SOARPlaybookResponse, SOARActionCreateRequest, SOARActionResponse,
+    SOARApprovalDecisionRequest, SOARKPIs
+)
 
 __all__ = [
     "LoginRequest", "TokenResponse", "TokenPayload",
@@ -46,5 +50,7 @@ __all__ = [
     "AssetResponse", "AssetDetailResponse", "AssetCriticalityUpdateRequest",
     "AssetSyncResult", "AssetInventoryKPIs",
     "SecurityEventCreate", "SecurityEventResponse", "SecurityAlertResponse", "SecurityIncidentResponse",
-    "MitreTechniqueCount", "MitreMatrixSummary", "SIEMKPIs", "AttackSimulationRequest"
+    "MitreTechniqueCount", "MitreMatrixSummary", "SIEMKPIs", "AttackSimulationRequest",
+    "SOARPlaybookResponse", "SOARActionCreateRequest", "SOARActionResponse",
+    "SOARApprovalDecisionRequest", "SOARKPIs"
 ]

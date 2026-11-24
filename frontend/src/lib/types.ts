@@ -270,3 +270,50 @@ export interface SIEMKPIsItem {
   by_severity: Record<string, number>;
   by_category: Record<string, number>;
 }
+
+// SOAR & Incident Response Types (Phase 7)
+export interface SOARPlaybookItem {
+  id: string;
+  organization_id: string;
+  name: string;
+  description: string;
+  trigger_event: string;
+  requires_approval: boolean;
+  action_type: string;
+  is_enabled: boolean;
+  created_at: string;
+}
+
+export interface SOARActionItem {
+  id: string;
+  organization_id: string;
+  playbook_id?: string;
+  action_type: string;
+  status: "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "EXECUTING" | "COMPLETED" | "FAILED" | "ROLLED_BACK";
+  target_type: string;
+  target_id: string;
+  target_name?: string;
+  incident_id?: string;
+  requested_by: string;
+  approved_by?: string;
+  rejection_reason?: string;
+  executed_at?: string;
+  verified: boolean;
+  verification_details?: string;
+  rollback_supported: boolean;
+  is_rolled_back: boolean;
+  rollback_details?: string;
+  parameters?: Record<string, any>;
+  output_log?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SOARKPIsItem {
+  total_actions: number;
+  pending_approval: number;
+  completed_actions: number;
+  failed_actions: number;
+  rolled_back: number;
+  by_type: Record<string, number>;
+}

@@ -12,6 +12,7 @@ import { VMManagement } from "../components/vm/VMManagement";
 import { EndpointFleet } from "../components/agent/EndpointFleet";
 import { AssetInventory } from "../components/inventory/AssetInventory";
 import { SIEMDashboard } from "../components/siem/SIEMDashboard";
+import { IncidentResponseSOAR } from "../components/soar/IncidentResponseSOAR";
 import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
@@ -89,6 +90,8 @@ export default function SOCDashboard() {
           <AssetInventory authToken={authToken} />
         ) : currentTab === "SIEM & Correlation" ? (
           <SIEMDashboard authToken={authToken} />
+        ) : currentTab === "Incident Response" ? (
+          <IncidentResponseSOAR authToken={authToken} />
         ) : (
           <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
             {/* Welcome Banner */}
