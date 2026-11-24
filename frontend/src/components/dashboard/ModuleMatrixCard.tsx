@@ -12,9 +12,9 @@ interface PhaseItem {
 
 const ROADMAP: PhaseItem[] = [
   { id: 1, name: "Core Foundation", status: "COMPLETE", summary: "FastAPI, Next.js, SQLite WAL, RBAC, Health, Audit" },
-  { id: 2, name: "Network Simulation Engine", status: "PLANNED", summary: "Linux netns, veth pairs, Linux bridges, nftables, React Flow" },
-  { id: 3, name: "Real VM Integration", status: "PLANNED", summary: "VMware Workstation CLI adapter, VM power states, vNIC bridging" },
-  { id: 4, name: "Distributed Linux Agent", status: "PLANNED", summary: "Standalone Python agent, TLS heartbeat, policy enforcement" },
+  { id: 2, name: "Network Simulation Engine", status: "COMPLETE", summary: "Linux netns, veth pairs, Linux bridges, nftables, React Flow" },
+  { id: 3, name: "Real VM Integration", status: "COMPLETE", summary: "VMware Workstation CLI adapter, VM power states, vNIC bridging" },
+  { id: 4, name: "Distributed Linux Agent", status: "COMPLETE", summary: "Standalone Python agent, TLS heartbeat, policy enforcement" },
   { id: 5, name: "Asset Inventory & Monitoring", status: "PLANNED", summary: "Processes, sockets, auth logs, File Integrity Monitoring (FIM)" },
   { id: 6, name: "SIEM & Detection Engine", status: "PLANNED", summary: "Event normalization, MITRE ATT&CK mapping, alert correlation" },
   { id: 7, name: "Incident Response (SOAR)", status: "PLANNED", summary: "Host isolation, firewall blocking, approval workflows, rollback" },
@@ -33,7 +33,7 @@ export function ModuleMatrixCard() {
           Architecture & Roadmap Execution Matrix
         </h2>
         <span className="text-xs font-mono text-cyan-400">
-          Phase 1 Active (1/12)
+          Phase 4 Active (4/12)
         </span>
       </div>
 

@@ -9,6 +9,7 @@ import { ModuleMatrixCard } from "../components/dashboard/ModuleMatrixCard";
 import { RecentAuditCard } from "../components/dashboard/RecentAuditCard";
 import { NetworkStudio } from "../components/network/NetworkStudio";
 import { VMManagement } from "../components/vm/VMManagement";
+import { EndpointFleet } from "../components/agent/EndpointFleet";
 import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
@@ -80,6 +81,8 @@ export default function SOCDashboard() {
           <NetworkStudio authToken={authToken} />
         ) : currentTab === "Virtual Machines" ? (
           <VMManagement authToken={authToken} />
+        ) : currentTab === "Endpoint Fleet" ? (
+          <EndpointFleet authToken={authToken} />
         ) : (
           <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
             {/* Welcome Banner */}

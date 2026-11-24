@@ -13,8 +13,12 @@ from app.schemas.network import (
     DeploymentPreview, DeploymentResult
 )
 from app.schemas.vm import (
-    NetworkAdapterInfo, VMRegisterRequest, VMPowerRequest, VMAssociateSegmentRequest,
+    NetworkAdapterInfo, VMRegisterRequest, VMDiscoverRequest, VMPowerRequest, VMAssociateSegmentRequest,
     VMResponse, VMDiscoveryResult
+)
+from app.schemas.agent import (
+    AgentRegisterRequest, AgentRegisterResponse, AgentHeartbeatRequest, AgentHeartbeatResponse,
+    AgentTelemetryBatch, AgentResponse, AgentDetailResponse
 )
 
 __all__ = [
@@ -27,6 +31,8 @@ __all__ = [
     "ConnectionCreate", "ConnectionResponse",
     "TopologyCreate", "TopologyUpdate", "TopologyResponse", "TopologyDetailResponse",
     "DeploymentPreview", "DeploymentResult",
-    "NetworkAdapterInfo", "VMRegisterRequest", "VMPowerRequest", "VMAssociateSegmentRequest",
-    "VMResponse", "VMDiscoveryResult"
+    "NetworkAdapterInfo", "VMRegisterRequest", "VMDiscoverRequest", "VMPowerRequest", "VMAssociateSegmentRequest",
+    "VMResponse", "VMDiscoveryResult",
+    "AgentRegisterRequest", "AgentRegisterResponse", "AgentHeartbeatRequest", "AgentHeartbeatResponse",
+    "AgentTelemetryBatch", "AgentResponse", "AgentDetailResponse"
 ]

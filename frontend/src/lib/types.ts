@@ -83,3 +83,53 @@ export interface VMDiscoveryResult {
   registered_vms: VirtualMachineItem[];
   scanned_paths: string[];
 }
+
+// Distributed Linux Agent Types (Phase 4)
+export interface AgentHardwareSpecs {
+  cpu_cores?: number;
+  memory_mb?: number;
+  disk_total_gb?: number;
+}
+
+export interface AgentItem {
+  id: string;
+  organization_id: string;
+  hostname: string;
+  ip_address: string;
+  os_type: string;
+  os_release: string;
+  kernel_version: string;
+  agent_version: string;
+  status: "ONLINE" | "OFFLINE" | "ISOLATED" | "REVOKED";
+  last_heartbeat: string;
+  heartbeat_interval_sec: number;
+  hardware_specs?: AgentHardwareSpecs;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AgentLatestTelemetry {
+  timestamp: string;
+  cpu_pct: number;
+  memory_pct: number;
+  disk_pct: number;
+  network_connections: Array<{
+    protocol: string;
+    local_port: number;
+    remote_ip?: string;
+    remote_port?: number;
+    state?: string;
+  }>;
+  processes_count: number;
+  fim_alerts: Array<{
+    path: string;
+    action: string;
+    severity: string;
+    message: string;
+  }>;
+}
+
+export interface AgentDetailItem extends AgentItem {
+  pending_commands: string[];
+  latest_telemetry?: AgentLatestTelemetry;
+}

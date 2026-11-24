@@ -4,6 +4,43 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 4: Distributed Linux Agent Platform] - 2026-11-24
+
+### Added
+- **Distributed Linux Security Agent (`agent/cyberlab_agent.py`)**:
+  - Autonomous lightweight Python agent installable on Kali host, Parrot OS VM, Metasploitable 2 VM, or remote Linux endpoints.
+  - Automatic identity provisioning and outbound cryptographic credential exchange (`cla_` Bearer tokens).
+  - Outbound TLS heartbeat reporting activity status and receiving SOAR control directives.
+  - Host telemetry engine: CPU, memory, and disk utilization, listening network sockets mapping (`TCP`/`UDP` ports and connection states), and process snapshot collection.
+  - File Integrity Monitoring (FIM): SHA-256 cryptographic baseline hashing and delta change detection on `/etc/passwd`, `/etc/shadow`, `/etc/sudoers`, `/etc/ssh/sshd_config`, and `/etc/hosts` with an alert buffer.
+  - Local config persistence (`cyberlab_agent_config.json`) ensuring resilience across network drops and reboots.
+- **Relational Models & Schemas (`backend/app/models/agent.py`, `backend/app/schemas/agent.py`)**:
+  - `Agent`: Host entity tracking hardware specs, OS release, kernel version, status (`ONLINE`, `OFFLINE`, `ISOLATED`, `REVOKED`), policy JSON, and queued SOAR commands.
+  - `AgentTelemetry`: Time-series table for host resource metrics, open sockets, processes, authentication events, and FIM alerts.
+  - Pydantic v2 schemas: `AgentRegisterRequest`, `AgentHeartbeatRequest`, `AgentTelemetryBatch`, `AgentResponse`, `AgentDetailResponse`.
+- **REST API Routes (`backend/app/api/v1/agents.py`)**:
+  - `POST /api/v1/agents/register`: Self-registration endpoint issuing agent IDs and tokens.
+  - `POST /api/v1/agents/heartbeat`: Authenticated periodic check-in returning queued SOAR commands.
+  - `POST /api/v1/agents/telemetry`: Batch ingestion of host resource metrics, sockets, processes, and FIM alerts.
+  - `GET /api/v1/agents`: SOC fleet overview with automatic offline detection (>35s heartbeat timeout).
+  - `GET /api/v1/agents/{id}`: Detailed host telemetry snapshot and system specs.
+  - `POST /api/v1/agents/{id}/isolate`: SOAR endpoint quarantine directive.
+  - `POST /api/v1/agents/{id}/restore`: SOAR network restore directive.
+  - `POST /api/v1/agents/{id}/revoke`: Immediate credential invalidation killswitch.
+- **Frontend Endpoint Fleet Dashboard (`frontend/src/components/agent/EndpointFleet.tsx`)**:
+  - Fleet KPI cards: Total endpoints, online nodes (live pulse), quarantined/isolated count, offline count.
+  - Interactive agent list with hardware specs, IP addresses, OS/kernel details, and status badges.
+  - Telemetry Inspection Modal displaying CPU/RAM/Disk gauges, active listening ports table, and FIM integrity alert logs.
+  - Interactive SOAR controls: One-click "Quarantine / Isolate", "Restore Network", and "Revoke Credentials".
+  - One-click copyable deploy command helper banner for easy onboarding of VMs.
+- **Automated Tests (`backend/tests/test_agent.py`, `backend/tests/test_agent_e2e.py`)**:
+  - 7 comprehensive tests covering registration, heartbeat authentication, telemetry ingestion, listing/details, SOAR isolation/restore lifecycle, credential revocation RBAC, and full end-to-end agent simulation.
+  - Total test suite expanded to 30 passing tests.
+- **Documentation**:
+  - `documentation/AGENT_ARCHITECTURE.md`: Detailed specification of agent architecture, protocol lifecycle, FIM design, and SOAR response mechanics.
+
+---
+
 ## [Phase 3: Real Virtual Machine Integration] - 2026-11-24
 
 ### Added

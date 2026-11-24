@@ -1,4 +1,13 @@
-import { HealthResponse, LoginResponse, AuditLogItem, UserProfile, VirtualMachineItem, VMDiscoveryResult } from "./types";
+import {
+  HealthResponse,
+  LoginResponse,
+  AuditLogItem,
+  UserProfile,
+  VirtualMachineItem,
+  VMDiscoveryResult,
+  AgentItem,
+  AgentDetailItem,
+} from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
 
@@ -129,6 +138,59 @@ export async function powerVM(
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.detail || `Power action '${action}' failed`);
+  }
+  return await res.json();
+}
+
+// Distributed Linux Agent API (Phase 4)
+export async function fetchAgents(token: string): Promise<AgentItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/agents`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch agent fleet");
+  return await res.json();
+}
+
+export async function fetchAgentDetail(token: string, agentId: string): Promise<AgentDetailItem> {
+  const res = await fetch(`${BACKEND_BASE}/agents/${agentId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch agent details");
+  return await res.json();
+}
+
+export async function isolateAgent(token: string, agentId: string): Promise<AgentItem> {
+  const res = await fetch(`${BACKEND_BASE}/agents/${agentId}/isolate`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to isolate agent");
+  }
+  return await res.json();
+}
+
+export async function restoreAgent(token: string, agentId: string): Promise<AgentItem> {
+  const res = await fetch(`${BACKEND_BASE}/agents/${agentId}/restore`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to restore agent");
+  }
+  return await res.json();
+}
+
+export async function revokeAgent(token: string, agentId: string): Promise<AgentItem> {
+  const res = await fetch(`${BACKEND_BASE}/agents/${agentId}/revoke`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to revoke agent");
   }
   return await res.json();
 }
