@@ -4,33 +4,43 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 2: Linux Network Simulation Engine] - 2026-11-24
+
+### Added
+- **Linux Network Infrastructure Engine (`backend/app/network/`)**:
+  - `safety.py`: `HostProtectionValidator` enforcing strict boundary isolation; prevents any mutation of physical interfaces (`wlan0`, `eth0`, `lo`) and host default gateway.
+  - `driver_interface.py`: Abstract `NetworkDriver` contract for virtual networking.
+  - `linux_driver.py`: `LinuxKernelDriver` managing real `ip netns`, `veth`, `bridge`, `vlan`, and `nftables` via allowlisted commands.
+  - `simulation_driver.py`: `SimulationDriver` providing sandboxed in-memory network modeling, CIDR validation, IP conflict detection, and packet routing metrics.
+  - `manager.py`: `NetworkEngineManager` orchestrating pre-flight safety previews, sequential deployment, and graceful reverse teardown.
+- **Relational Models & Schemas**:
+  - `Topology`: Visual network design persistence with React Flow canvas coordinates.
+  - `NetworkSegment`: Subnets, virtual bridges (`cl-br-*`), and 802.1Q VLAN IDs.
+  - `NetworkDevice`: Virtual routers, switches, firewalls, and Linux endpoints mapped to isolated namespaces (`cl-ns-*`).
+  - `NetworkConnection`: Virtual Ethernet cable pairs (`cl-ep-*` <-> `cl-brp-*`).
+- **REST API Routes (`/api/v1/topologies`)**:
+  - Topology CRUD with RBAC enforcement (`NetworkEngineer`, `Admin`).
+  - `GET /api/v1/topologies/{id}/preview`: Pre-flight safety check and resource preview.
+  - `POST /api/v1/topologies/{id}/deploy`: Deploys isolated virtual bridges and namespaces.
+  - `POST /api/v1/topologies/{id}/teardown`: Safely tears down and deletes virtual resources.
+- **Interactive Network Studio (Frontend)**:
+  - React Flow (`@xyflow/react`) canvas editor under `frontend/src/components/network/NetworkStudio.tsx`.
+  - Custom dark-theme device node component (`CustomDeviceNode.tsx`) with status indicators, IP labels, and drag-and-drop connection handles.
+  - Device palette for adding Routers, Bridges, Firewalls, Servers, and Endpoints.
+  - Real-time properties inspector for editing hostnames, IP CIDR, and VLAN IDs.
+  - Pre-flight safety preview modal before real deployment.
+  - One-click Simulation Deployment & Teardown controls with glowing state badges.
+- **Documentation**:
+  - `documentation/NETWORK_ENGINE.md`: Full architectural reference for Linux network namespaces, veth pairs, bridges, VLANs, and safety constraints.
+
+---
+
 ## [Phase 1: Core Foundation] - 2026-11-24
 
 ### Added
-- **Architectural Documentation**:
-  - `documentation/NETGUARDIAN_AUDIT.md`: In-depth analysis of NetGuardian reference repository.
-  - `documentation/REUSE_MATRIX.md`: Classification matrix for code reuse, adaptation, and reimplementation.
-  - `documentation/CYBERLAB_ARCHITECTURE_COMPARISON.md`: Structural divergence between Cisco-centric network monitoring and CyberLab's hybrid security platform.
-  - `documentation/ARCHITECTURE.md`: High-level system architecture and component interactions.
-  - `documentation/DEVELOPMENT_ROADMAP.md`: 12-phase incremental engineering plan.
-  - `documentation/DATABASE_DESIGN.md`: Relational schema design and migration roadmap.
-  - `documentation/API_DESIGN.md`: REST API specification and endpoint catalog.
-  - `documentation/SECURITY_ARCHITECTURE.md`: Security controls, RBAC hierarchy, and execution boundaries.
-- **Backend Core**:
-  - FastAPI modular backend structure under `backend/app/`.
-  - Application settings (`app/core/config.py`) using Pydantic Settings with automatic random secret generation.
-  - Cryptographic security utilities (`app/core/security.py`) for password hashing and JWT validation.
-  - Database layer (`app/database/session.py`) with SQLite WAL mode and SQLAlchemy 2.0 ORM.
-  - Phase 1 Models: `User`, `Organization`, `Site`, `AuditLog`.
-  - Security headers and request auditing middleware.
-  - API routers:
-    - `/api/v1/health`: Detailed platform and database health checks.
-    - `/api/v1/auth`: Secure login, user info, and token exchange.
-    - `/api/v1/users`: Role-based user listing and management.
-    - `/api/v1/audit`: Immutable audit log query endpoint.
-  - Automated test suite under `backend/tests/` with 100% passing tests for health, authentication, RBAC, and auditing.
-- **Frontend Core**:
-  - Next.js application with TypeScript and Tailwind CSS under `frontend/`.
-  - Professional SOC dark-theme interface with real-time backend telemetry connection.
-  - Navigation shell for Infrastructure, Endpoints, SIEM, Incident Response, Digital Twin, and Purple-Team modules.
-  - Reusable UI component library (Badges, StatCards, StatusIndicators).
+- Architectural Documentation (`NETGUARDIAN_AUDIT.md`, `REUSE_MATRIX.md`, `CYBERLAB_ARCHITECTURE_COMPARISON.md`, `ARCHITECTURE.md`, `DEVELOPMENT_ROADMAP.md`, `DATABASE_DESIGN.md`, `API_DESIGN.md`, `SECURITY_ARCHITECTURE.md`).
+- FastAPI modular backend with Pydantic settings, JWT authentication, and SQLite WAL database.
+- RBAC roles: `super_admin`, `org_admin`, `soc_manager`, `soc_analyst`, `network_engineer`, `auditor`.
+- Health probe (`/api/v1/health`) and immutable audit trail (`/api/v1/audit`).
+- Next.js TypeScript frontend with Tailwind CSS and SOC dashboard.
+- Pytest automated test suite.

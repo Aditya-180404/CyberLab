@@ -7,6 +7,7 @@ import { SystemHealthCard } from "../components/dashboard/SystemHealthCard";
 import { QuickAuthCard } from "../components/dashboard/QuickAuthCard";
 import { ModuleMatrixCard } from "../components/dashboard/ModuleMatrixCard";
 import { RecentAuditCard } from "../components/dashboard/RecentAuditCard";
+import { NetworkStudio } from "../components/network/NetworkStudio";
 import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
@@ -40,7 +41,7 @@ export default function SOCDashboard() {
       const logs = await fetchAuditLogs(token, 10);
       setAuditLogs(logs);
     } catch (err) {
-      // Not fatal if unauthenticated
+      // Non-fatal if unauthenticated
     } finally {
       setAuditLoading(false);
     }
@@ -74,51 +75,57 @@ export default function SOCDashboard() {
       <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
         <Header currentUser={currentUser} onLogout={handleLogout} />
 
-        <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
-          {/* Welcome Banner */}
-          <div className="rounded-xl border border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/30 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg">
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold tracking-tight text-white">
-                  CyberLab Security Operations Center
-                </h1>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  PHASE 1 CORE FOUNDATION
-                </span>
+        {currentTab === "Network Studio" ? (
+          <NetworkStudio authToken={authToken} />
+        ) : (
+          <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
+            {/* Welcome Banner */}
+            <div className="rounded-xl border border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/30 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-xl font-bold tracking-tight text-white">
+                    CyberLab Security Operations Center
+                  </h1>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    PHASE 2 NETWORK ENGINE READY
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                  Central management control plane for isolated Linux network namespaces, virtual bridges, veth routing, and interactive visual topology simulation.
+                </p>
               </div>
-              <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                Central management control plane for isolated Linux network namespaces, virtual machine hypervisors, distributed EDR agents, SIEM telemetry, and purple-team attack simulations.
-              </p>
-            </div>
-            <div className="flex items-center space-x-3 shrink-0">
-              <div className="text-right">
-                <div className="text-[10px] font-mono text-slate-400 uppercase">Architecture Status</div>
-                <div className="text-xs font-mono font-bold text-cyan-400">REST & ORM VERIFIED</div>
+              <div className="flex items-center space-x-3 shrink-0">
+                <button
+                  onClick={() => setCurrentTab("Network Studio")}
+                  className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold font-mono shadow-md shadow-cyan-950 transition"
+                >
+                  Open Network Studio →
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* Core Row 1: System Health & RBAC Tester */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <SystemHealthCard
-                health={health}
-                loading={healthLoading}
-                error={healthError}
-                onRefresh={loadHealth}
-              />
+            {/* Core Row 1: System Health & RBAC Tester */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <SystemHealthCard
+                  health={health}
+                  loading={healthLoading}
+                  error={healthError}
+                  onRefresh={loadHealth}
+                />
+              </div>
+              <div>
+                <QuickAuthCard onLoginSuccess={handleLoginSuccess} />
+              </div>
             </div>
-            <div>
-              <QuickAuthCard onLoginSuccess={handleLoginSuccess} />
-            </div>
-          </div>
 
-          {/* Core Row 2: Architecture Roadmap Matrix */}
-          <ModuleMatrixCard />
+            {/* Core Row 2: Architecture Roadmap Matrix */}
+            <ModuleMatrixCard />
 
-          {/* Core Row 3: Audit Trail Log Stream */}
-          <RecentAuditCard logs={auditLogs} loading={auditLoading} />
-        </main>
+            {/* Core Row 3: Audit Trail Log Stream */}
+            <RecentAuditCard logs={auditLogs} loading={auditLoading} />
+          </main>
+        )}
       </div>
     </div>
   );

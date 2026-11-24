@@ -24,7 +24,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { name: "SOC Dashboard", phase: "Phase 1", icon: ShieldAlert, status: "ACTIVE" },
-  { name: "Network Studio", phase: "Phase 2", icon: Network, status: "PLANNED" },
+  { name: "Network Studio", phase: "Phase 2", icon: Network, status: "ACTIVE" },
   { name: "Virtual Machines", phase: "Phase 3", icon: Server, status: "PLANNED" },
   { name: "Endpoint Fleet", phase: "Phase 4-5", icon: Radio, status: "PLANNED" },
   { name: "SIEM & Correlation", phase: "Phase 6", icon: FileSearch, status: "PLANNED" },
@@ -48,7 +48,7 @@ export function Sidebar({ currentTab, onSelectTab }: { currentTab: string; onSel
             <div className="font-bold tracking-wider text-slate-100 flex items-center space-x-2">
               <span>CYBERLAB</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
-                v0.1
+                v0.2
               </span>
             </div>
             <p className="text-[11px] text-slate-400 tracking-tight">Security Platform</p>
@@ -99,7 +99,7 @@ export function Sidebar({ currentTab, onSelectTab }: { currentTab: string; onSel
         <div className="flex items-center justify-between text-[11px] text-slate-400">
           <span className="flex items-center space-x-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span className="text-slate-300 font-mono">CORE ONLINE</span>
+            <span className="text-slate-300 font-mono">NET-ENGINE ACTIVE</span>
           </span>
           <span className="font-mono text-slate-400">Kali Linux</span>
         </div>
