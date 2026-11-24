@@ -1,4 +1,4 @@
-import { HealthResponse, LoginResponse, AuditLogItem, UserProfile } from "./types";
+import { HealthResponse, LoginResponse, AuditLogItem, UserProfile, VirtualMachineItem, VMDiscoveryResult } from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
 
@@ -37,7 +37,7 @@ export async function fetchAuditLogs(token: string, limit = 10): Promise<AuditLo
   return await res.json();
 }
 
-// Topology & Network API
+// Topology & Network API (Phase 2)
 export async function fetchTopologies(token: string) {
   const res = await fetch(`${BACKEND_BASE}/topologies`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -56,16 +56,6 @@ export async function createTopology(token: string, payload: any) {
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.detail || "Failed to create topology");
   }
-  return await res.json();
-}
-
-export async function saveTopologyGraph(token: string, topologyId: string, graphData: any) {
-  const res = await fetch(`${BACKEND_BASE}/topologies/${topologyId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ graph_data: JSON.stringify(graphData) }),
-  });
-  if (!res.ok) throw new Error("Failed to save topology graph");
   return await res.json();
 }
 
@@ -100,6 +90,45 @@ export async function teardownTopology(token: string, topologyId: string) {
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.detail || "Teardown failed");
+  }
+  return await res.json();
+}
+
+// Virtual Machine API (Phase 3)
+export async function fetchVMs(token: string): Promise<VirtualMachineItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/vms`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch virtual machines");
+  return await res.json();
+}
+
+export async function discoverVMs(token: string): Promise<VMDiscoveryResult> {
+  const res = await fetch(`${BACKEND_BASE}/vms/discover`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to discover virtual machines");
+  }
+  return await res.json();
+}
+
+export async function powerVM(
+  token: string,
+  vmId: string,
+  action: "start" | "stop" | "reset" | "suspend",
+  mode: "soft" | "hard" = "soft"
+): Promise<VirtualMachineItem> {
+  const res = await fetch(`${BACKEND_BASE}/vms/${vmId}/power`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ action, mode }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Power action '${action}' failed`);
   }
   return await res.json();
 }

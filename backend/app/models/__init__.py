@@ -9,8 +9,10 @@ from app.models.topology import Topology
 from app.models.segment import NetworkSegment
 from app.models.device import NetworkDevice, DeviceType
 from app.models.connection import NetworkConnection
+from app.models.vm import VirtualMachine, PowerState
 
 __all__ = [
     "Organization", "Site", "User", "UserRole", "AuditLog",
-    "Topology", "NetworkSegment", "NetworkDevice", "DeviceType", "NetworkConnection"
+    "Topology", "NetworkSegment", "NetworkDevice", "DeviceType", "NetworkConnection",
+    "VirtualMachine", "PowerState"
 ]

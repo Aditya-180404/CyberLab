@@ -4,34 +4,45 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 3: Real Virtual Machine Integration] - 2026-11-24
+
+### Added
+- **VMware Workstation Hypervisor Engine (`backend/app/vm/`)**:
+  - `vmx_parser.py`: Safe `.vmx` configuration file parser extracting display names, vCPUs, memory, and virtual network adapters (`ethernet0` through `ethernet9`).
+  - `vmware_adapter.py`: `VMwareWorkstationAdapter` using `/usr/bin/vmrun` CLI to query running VM instances and dispatch power operations (`start`, `stop`, `reset`, `suspend`).
+  - `manager.py`: `VMManager` providing recursive filesystem discovery, safety validation, power state lifecycle management, and network segment association.
+  - Automatic Vulnerable Asset Tagging: Flags known vulnerable VMs (Metasploitable 2, Stapler, Kioptrix, VulnHub) and generates critical security warnings if configured in bridged mode.
+- **Relational Model & Schemas**:
+  - `VirtualMachine`: Entity tracking hypervisor type, `.vmx` path, power state (`RUNNING`, `STOPPED`, `SUSPENDED`), hardware specs, adapter metadata, and network segment associations.
+  - Pydantic v2 schemas: `VMResponse`, `VMRegisterRequest`, `VMDiscoverRequest`, `VMPowerRequest`, `NetworkAdapterInfo`, `VMDiscoveryResult`.
+- **REST API Routes (`/api/v1/vms`)**:
+  - `GET /api/v1/vms`: Lists all registered virtual machines with live adapter inspections.
+  - `POST /api/v1/vms/discover`: Recursively scans host drives and imports discovered `.vmx` configurations (successfully verified with 13 real local VMs on host).
+  - `POST /api/v1/vms/register`: Manual `.vmx` file path registration.
+  - `POST /api/v1/vms/{id}/power`: Controls start, graceful shutdown, reset, and suspension with audit logging.
+  - `POST /api/v1/vms/{id}/associate`: Links VM network cards to simulated CyberLab virtual bridges.
+- **SOC VM Management UI (`frontend/src/components/vm/VMManagement.tsx`)**:
+  - Comprehensive VM Fleet overview displaying live status cards for Metasploitable 2, Parrot OS, OPNsense, Stapler, Windows Server, etc.
+  - Real-time power state indicators with glowing status badges.
+  - Network Adapter Inspection panel displaying connection types (`custom vmnet1`), MAC addresses, and host-only isolation badges.
+  - One-click "Discover Local VMs on Host" scanning button.
+  - Dedicated power control buttons (Power On, Shut Down, Reset).
+- **Automated Tests**:
+  - `backend/tests/test_vm_integration.py` containing 4 tests verifying VMX parsing, bridged safety warnings, REST API power actions, and RBAC enforcement. Total test suite expanded to 23 passing tests.
+- **Documentation**:
+  - `documentation/VM_INTEGRATION.md`: Hypervisor integration guide, adapter models, discovered host machines, and security boundary policies.
+
+---
+
 ## [Phase 2: Linux Network Simulation Engine] - 2026-11-24
 
 ### Added
-- **Linux Network Infrastructure Engine (`backend/app/network/`)**:
-  - `safety.py`: `HostProtectionValidator` enforcing strict boundary isolation; prevents any mutation of physical interfaces (`wlan0`, `eth0`, `lo`) and host default gateway.
-  - `driver_interface.py`: Abstract `NetworkDriver` contract for virtual networking.
-  - `linux_driver.py`: `LinuxKernelDriver` managing real `ip netns`, `veth`, `bridge`, `vlan`, and `nftables` via allowlisted commands.
-  - `simulation_driver.py`: `SimulationDriver` providing sandboxed in-memory network modeling, CIDR validation, IP conflict detection, and packet routing metrics.
-  - `manager.py`: `NetworkEngineManager` orchestrating pre-flight safety previews, sequential deployment, and graceful reverse teardown.
-- **Relational Models & Schemas**:
-  - `Topology`: Visual network design persistence with React Flow canvas coordinates.
-  - `NetworkSegment`: Subnets, virtual bridges (`cl-br-*`), and 802.1Q VLAN IDs.
-  - `NetworkDevice`: Virtual routers, switches, firewalls, and Linux endpoints mapped to isolated namespaces (`cl-ns-*`).
-  - `NetworkConnection`: Virtual Ethernet cable pairs (`cl-ep-*` <-> `cl-brp-*`).
-- **REST API Routes (`/api/v1/topologies`)**:
-  - Topology CRUD with RBAC enforcement (`NetworkEngineer`, `Admin`).
-  - `GET /api/v1/topologies/{id}/preview`: Pre-flight safety check and resource preview.
-  - `POST /api/v1/topologies/{id}/deploy`: Deploys isolated virtual bridges and namespaces.
-  - `POST /api/v1/topologies/{id}/teardown`: Safely tears down and deletes virtual resources.
-- **Interactive Network Studio (Frontend)**:
-  - React Flow (`@xyflow/react`) canvas editor under `frontend/src/components/network/NetworkStudio.tsx`.
-  - Custom dark-theme device node component (`CustomDeviceNode.tsx`) with status indicators, IP labels, and drag-and-drop connection handles.
-  - Device palette for adding Routers, Bridges, Firewalls, Servers, and Endpoints.
-  - Real-time properties inspector for editing hostnames, IP CIDR, and VLAN IDs.
-  - Pre-flight safety preview modal before real deployment.
-  - One-click Simulation Deployment & Teardown controls with glowing state badges.
-- **Documentation**:
-  - `documentation/NETWORK_ENGINE.md`: Full architectural reference for Linux network namespaces, veth pairs, bridges, VLANs, and safety constraints.
+- Linux Network Infrastructure Engine (`backend/app/network/`): `HostProtectionValidator`, `driver_interface.py`, `linux_driver.py`, `simulation_driver.py`, `manager.py`.
+- Network Studio UI (`@xyflow/react`) with custom device nodes, drag-and-drop connections, properties inspector, and pre-flight safety preview modal.
+- Models: `Topology`, `NetworkSegment`, `NetworkDevice`, `NetworkConnection`.
+- REST API routes: `/api/v1/topologies`.
+- Pytest suite expanded to 19 tests.
+- Documentation: `documentation/NETWORK_ENGINE.md`.
 
 ---
 
@@ -43,4 +54,4 @@ All notable changes to the CyberLab platform are documented in this file.
 - RBAC roles: `super_admin`, `org_admin`, `soc_manager`, `soc_analyst`, `network_engineer`, `auditor`.
 - Health probe (`/api/v1/health`) and immutable audit trail (`/api/v1/audit`).
 - Next.js TypeScript frontend with Tailwind CSS and SOC dashboard.
-- Pytest automated test suite.
+- Pytest automated test suite (14 tests).

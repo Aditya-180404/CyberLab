@@ -49,3 +49,37 @@ export interface AuditLogItem {
   details?: string;
   created_at: string;
 }
+
+// VM Integration Types (Phase 3)
+export interface VMNetworkAdapter {
+  name: string;
+  connection_type: string;
+  vnet?: string;
+  mac_address?: string;
+  virtual_dev?: string;
+  is_bridged: boolean;
+}
+
+export interface VirtualMachineItem {
+  id: string;
+  organization_id: string;
+  name: string;
+  hypervisor_type: string;
+  config_path: string;
+  power_state: "RUNNING" | "STOPPED" | "SUSPENDED" | "UNKNOWN";
+  os_type: string;
+  vcpus: number;
+  memory_mb: number;
+  network_adapters: VMNetworkAdapter[];
+  attached_segment_id?: string;
+  is_vulnerable_target: boolean;
+  safety_warning?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VMDiscoveryResult {
+  discovered_count: number;
+  registered_vms: VirtualMachineItem[];
+  scanned_paths: string[];
+}

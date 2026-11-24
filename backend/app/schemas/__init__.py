@@ -12,6 +12,10 @@ from app.schemas.network import (
     TopologyCreate, TopologyUpdate, TopologyResponse, TopologyDetailResponse,
     DeploymentPreview, DeploymentResult
 )
+from app.schemas.vm import (
+    NetworkAdapterInfo, VMRegisterRequest, VMPowerRequest, VMAssociateSegmentRequest,
+    VMResponse, VMDiscoveryResult
+)
 
 __all__ = [
     "LoginRequest", "TokenResponse", "TokenPayload",
@@ -22,5 +26,7 @@ __all__ = [
     "DeviceCreate", "DeviceResponse",
     "ConnectionCreate", "ConnectionResponse",
     "TopologyCreate", "TopologyUpdate", "TopologyResponse", "TopologyDetailResponse",
-    "DeploymentPreview", "DeploymentResult"
+    "DeploymentPreview", "DeploymentResult",
+    "NetworkAdapterInfo", "VMRegisterRequest", "VMPowerRequest", "VMAssociateSegmentRequest",
+    "VMResponse", "VMDiscoveryResult"
 ]

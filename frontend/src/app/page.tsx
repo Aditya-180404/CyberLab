@@ -8,6 +8,7 @@ import { QuickAuthCard } from "../components/dashboard/QuickAuthCard";
 import { ModuleMatrixCard } from "../components/dashboard/ModuleMatrixCard";
 import { RecentAuditCard } from "../components/dashboard/RecentAuditCard";
 import { NetworkStudio } from "../components/network/NetworkStudio";
+import { VMManagement } from "../components/vm/VMManagement";
 import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
@@ -77,6 +78,8 @@ export default function SOCDashboard() {
 
         {currentTab === "Network Studio" ? (
           <NetworkStudio authToken={authToken} />
+        ) : currentTab === "Virtual Machines" ? (
+          <VMManagement authToken={authToken} />
         ) : (
           <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
             {/* Welcome Banner */}
@@ -87,19 +90,19 @@ export default function SOCDashboard() {
                     CyberLab Security Operations Center
                   </h1>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    PHASE 2 NETWORK ENGINE READY
+                    PHASE 3 VM INTEGRATION ACTIVE
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                  Central management control plane for isolated Linux network namespaces, virtual bridges, veth routing, and interactive visual topology simulation.
+                  Central management control plane for isolated Linux network namespaces, VMware virtual machines, distributed EDR agents, SIEM telemetry, and purple-team attack simulations.
                 </p>
               </div>
               <div className="flex items-center space-x-3 shrink-0">
                 <button
-                  onClick={() => setCurrentTab("Network Studio")}
+                  onClick={() => setCurrentTab("Virtual Machines")}
                   className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold font-mono shadow-md shadow-cyan-950 transition"
                 >
-                  Open Network Studio →
+                  Manage Real VMs →
                 </button>
               </div>
             </div>
