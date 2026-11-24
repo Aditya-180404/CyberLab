@@ -11,6 +11,11 @@ import {
   AssetDetailItem,
   AssetSyncResult,
   AssetKPIs,
+  SecurityEventItem,
+  SecurityAlertItem,
+  SecurityIncidentItem,
+  MitreMatrixSummaryItem,
+  SIEMKPIsItem,
 } from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
@@ -259,6 +264,75 @@ export async function updateAssetCriticality(
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
     throw new Error(errData.detail || "Failed to update asset criticality");
+  }
+  return await res.json();
+}
+
+// SIEM & MITRE ATT&CK API (Phase 6)
+export async function fetchSecurityEvents(
+  token: string,
+  params?: { category?: string; severity?: string; hostname?: string; search?: string; limit?: number }
+): Promise<SecurityEventItem[]> {
+  const query = new URLSearchParams();
+  if (params?.category && params.category !== "ALL") query.set("category", params.category);
+  if (params?.severity && params.severity !== "ALL") query.set("severity", params.severity);
+  if (params?.hostname) query.set("hostname", params.hostname);
+  if (params?.search) query.set("search", params.search);
+  if (params?.limit) query.set("limit", params.limit.toString());
+
+  const res = await fetch(`${BACKEND_BASE}/siem/events?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch security events");
+  return await res.json();
+}
+
+export async function fetchSecurityAlerts(token: string): Promise<SecurityAlertItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/siem/alerts`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch security alerts");
+  return await res.json();
+}
+
+export async function fetchSecurityIncidents(token: string): Promise<SecurityIncidentItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/siem/incidents`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch security incidents");
+  return await res.json();
+}
+
+export async function fetchMitreMatrix(token: string): Promise<MitreMatrixSummaryItem> {
+  const res = await fetch(`${BACKEND_BASE}/siem/mitre`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch MITRE matrix");
+  return await res.json();
+}
+
+export async function fetchSIEMKPIs(token: string): Promise<SIEMKPIsItem> {
+  const res = await fetch(`${BACKEND_BASE}/siem/kpis`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch SIEM KPIs");
+  return await res.json();
+}
+
+export async function simulateAttackScenario(
+  token: string,
+  scenario: string,
+  target_hostname = "metasploitable2",
+  target_ip = "192.168.1.120"
+): Promise<SecurityEventItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/siem/simulate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ scenario, target_hostname, target_ip }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Attack simulation failed");
   }
   return await res.json();
 }

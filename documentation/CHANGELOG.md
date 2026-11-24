@@ -4,6 +4,47 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 6: SIEM, Detection Engine & MITRE ATT&CK Mapping] - 2026-11-24
+
+### Added
+- **SIEM & Detection Engine (`backend/app/siem/`)**:
+  - `SIEMEngine` (`engine.py`): Ingests, normalizes, and inspects real-time security events across distributed agents, VMware virtual machines, and simulated network nodes.
+  - Stateful Rule-Based Detection Engine (`rules.py`): Real-time behavioral detection rules mapped to MITRE ATT&CK techniques:
+    - `RULE_AUTH_BRUTE_FORCE` (T1110: Brute Force)
+    - `RULE_PRIVILEGE_ESCALATION_SUDO` (T1548.003: Sudo and Sudo Caching)
+    - `RULE_CREDENTIAL_DUMPING_SHADOW` (T1003.008: /etc/passwd and /etc/shadow)
+    - `RULE_SUSPICIOUS_REVERSE_SHELL` (T1059.004: Unix Shell)
+    - `RULE_PORT_SCAN_RECON` (T1046: Network Service Discovery)
+  - Multi-Stage Incident Correlation Engine: Automatically detects correlated multi-vector attacks against a target host, linking disparate alerts into unified `SecurityIncident` records with root cause analysis.
+  - Time-Windowed Alert Deduplication: Aggregates repetitive alert firings into single alerts with `evidence_count` counters.
+  - Synthetic Attack Simulator: Injects multi-stage attack scenarios (`brute_force`, `privilege_escalation`, `credential_dumping`, `reverse_shell`) for automated purple-team validation.
+- **Relational Models & Schemas (`backend/app/models/siem.py`, `backend/app/schemas/siem.py`)**:
+  - `SecurityEvent`: Normalized security event table conforming to ECS event taxonomy.
+  - `SecurityAlert`: Rule detection alert table with MITRE tactic and technique tags.
+  - `SecurityIncident`: Correlated multi-stage security incident table.
+  - Pydantic v2 schemas: `SecurityEventCreate`, `SecurityEventResponse`, `SecurityAlertResponse`, `SecurityIncidentResponse`, `MitreMatrixSummary`, `SIEMKPIs`, `AttackSimulationRequest`.
+- **REST API Endpoints (`backend/app/api/v1/siem.py`)**:
+  - `GET /api/v1/siem/events`: Stream normalized events with multi-criteria filtering.
+  - `POST /api/v1/siem/events`: Real-time event ingestion and detection evaluation.
+  - `GET /api/v1/siem/alerts`: Aggregated security alerts stream.
+  - `GET /api/v1/siem/incidents`: Correlated multi-stage security incidents.
+  - `GET /api/v1/siem/mitre`: Interactive MITRE ATT&CK matrix heatmap with active hit counts.
+  - `GET /api/v1/siem/kpis`: Real-time SIEM counters and category breakdown.
+  - `POST /api/v1/siem/simulate`: Offensive attack simulation execution with audit logging.
+- **SOC SIEM Dashboard (`frontend/src/components/siem/SIEMDashboard.tsx`)**:
+  - Fleet KPI cards: Ingested Events volume, Open Security Alerts, Correlated Incidents, and Active MITRE ATT&CK Techniques.
+  - Interactive MITRE ATT&CK Matrix: Visual heatmap spanning 9 Enterprise Tactics with glowing threat detection indicators.
+  - Correlated Incidents & Alerts View: Multi-stage incident summaries with MITRE tactic chains.
+  - Live Event Stream: Console-style log viewer with severity badges, category pills, and search.
+  - One-Click Attack Simulation Modal: Instant injection of attack scenarios against targets like Metasploitable 2.
+- **Automated Tests (`backend/tests/test_siem.py`)**:
+  - 5 tests covering event ingestion, brute force detection, incident correlation across multiple stages, attack simulation, and MITRE matrix telemetry.
+  - Full backend test suite expanded to 39 passing tests.
+- **Documentation**:
+  - `documentation/SIEM_ARCHITECTURE.md`: Complete specification of SIEM architecture, rule engine, correlation algorithm, and MITRE ATT&CK mapping.
+
+---
+
 ## [Phase 5: Asset Inventory & Deep Monitoring Engine] - 2026-11-24
 
 ### Added

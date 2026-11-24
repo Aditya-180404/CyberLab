@@ -16,7 +16,7 @@ const ROADMAP: PhaseItem[] = [
   { id: 3, name: "Real VM Integration", status: "COMPLETE", summary: "VMware Workstation CLI adapter, VM power states, vNIC bridging" },
   { id: 4, name: "Distributed Linux Agent", status: "COMPLETE", summary: "Standalone Python agent, TLS heartbeat, policy enforcement" },
   { id: 5, name: "Asset Inventory & Monitoring", status: "COMPLETE", summary: "Cross-platform asset sync, dynamic risk scoring, posture inspection" },
-  { id: 6, name: "SIEM & Detection Engine", status: "PLANNED", summary: "Event normalization, MITRE ATT&CK mapping, alert correlation" },
+  { id: 6, name: "SIEM & Detection Engine", status: "COMPLETE", summary: "Event normalization, MITRE ATT&CK mapping, alert correlation" },
   { id: 7, name: "Incident Response (SOAR)", status: "PLANNED", summary: "Host isolation, firewall blocking, approval workflows, rollback" },
   { id: 8, name: "Digital Twin & Attack Paths", status: "PLANNED", summary: "NetworkX topological graphs, reachability, blast-radius analysis" },
   { id: 9, name: "Attack Simulation Studio", status: "PLANNED", summary: "Safe, bounded offensive scenarios against authorized targets" },
@@ -33,7 +33,7 @@ export function ModuleMatrixCard() {
           Architecture & Roadmap Execution Matrix
         </h2>
         <span className="text-xs font-mono text-cyan-400">
-          Phase 5 Active (5/12)
+          Phase 6 Active (6/12)
         </span>
       </div>
 

@@ -10,6 +10,7 @@ from app.api.v1.topologies import router as topologies_router
 from app.api.v1.vms import router as vms_router
 from app.api.v1.agents import router as agents_router
 from app.api.v1.assets import router as assets_router
+from app.api.v1.siem import router as siem_router
 
 api_router = APIRouter()
 
@@ -21,3 +22,4 @@ api_router.include_router(topologies_router, tags=["Network Simulation & Topolog
 api_router.include_router(vms_router, tags=["Virtual Machine Integration"])
 api_router.include_router(agents_router, tags=["Distributed Linux Agents"])
 api_router.include_router(assets_router, tags=["Asset Inventory & Posture"])
+api_router.include_router(siem_router, tags=["SIEM & Detection Engine"])

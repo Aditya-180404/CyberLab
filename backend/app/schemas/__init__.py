@@ -24,6 +24,10 @@ from app.schemas.asset import (
     AssetResponse, AssetDetailResponse, AssetCriticalityUpdateRequest,
     AssetSyncResult, AssetInventoryKPIs
 )
+from app.schemas.siem import (
+    SecurityEventCreate, SecurityEventResponse, SecurityAlertResponse, SecurityIncidentResponse,
+    MitreTechniqueCount, MitreMatrixSummary, SIEMKPIs, AttackSimulationRequest
+)
 
 __all__ = [
     "LoginRequest", "TokenResponse", "TokenPayload",
@@ -40,5 +44,7 @@ __all__ = [
     "AgentRegisterRequest", "AgentRegisterResponse", "AgentHeartbeatRequest", "AgentHeartbeatResponse",
     "AgentTelemetryBatch", "AgentResponse", "AgentDetailResponse",
     "AssetResponse", "AssetDetailResponse", "AssetCriticalityUpdateRequest",
-    "AssetSyncResult", "AssetInventoryKPIs"
+    "AssetSyncResult", "AssetInventoryKPIs",
+    "SecurityEventCreate", "SecurityEventResponse", "SecurityAlertResponse", "SecurityIncidentResponse",
+    "MitreTechniqueCount", "MitreMatrixSummary", "SIEMKPIs", "AttackSimulationRequest"
 ]

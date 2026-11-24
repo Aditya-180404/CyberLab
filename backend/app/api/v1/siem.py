@@ -1,0 +1,202 @@
+"""
+SIEM & Detection Engine API Router (Phase 6)
+Provides event streaming, alert triage, incident correlation, and MITRE ATT&CK telemetry.
+"""
+import json
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+from app.database.session import get_db
+from app.models.user import User, UserRole
+from app.models.siem import (
+    SecurityEvent, SecurityAlert, SecurityIncident,
+    EventCategory, EventSeverity, AlertStatus, IncidentStatus
+)
+from app.models.audit import AuditLog
+from app.schemas.siem import (
+    SecurityEventCreate, SecurityEventResponse, SecurityAlertResponse,
+    SecurityIncidentResponse, MitreMatrixSummary, SIEMKPIs, AttackSimulationRequest
+)
+from app.siem.engine import siem_engine
+from app.core.dependencies import get_current_user, require_role
+
+router = APIRouter()
+
+
+def _format_event(e: SecurityEvent) -> SecurityEventResponse:
+    return SecurityEventResponse(
+        id=e.id,
+        organization_id=e.organization_id,
+        timestamp=e.timestamp,
+        category=e.category,
+        severity=e.severity,
+        action=e.action,
+        message=e.message,
+        asset_id=e.asset_id,
+        hostname=e.hostname,
+        source_ip=e.source_ip,
+        destination_ip=e.destination_ip,
+        mitre_tactic=e.mitre_tactic,
+        mitre_technique_id=e.mitre_technique_id,
+        mitre_technique_name=e.mitre_technique_name,
+        raw_data=json.loads(e.raw_data_json or "{}") if e.raw_data_json else None
+    )
+
+
+def _format_alert(a: SecurityAlert) -> SecurityAlertResponse:
+    return SecurityAlertResponse(
+        id=a.id,
+        organization_id=a.organization_id,
+        rule_id=a.rule_id,
+        title=a.title,
+        description=a.description,
+        severity=a.severity,
+        status=a.status,
+        asset_id=a.asset_id,
+        hostname=a.hostname,
+        source_ip=a.source_ip,
+        mitre_tactic=a.mitre_tactic,
+        mitre_technique_id=a.mitre_technique_id,
+        mitre_technique_name=a.mitre_technique_name,
+        evidence_count=a.evidence_count,
+        first_seen=a.first_seen,
+        last_seen=a.last_seen,
+        incident_id=a.incident_id,
+        details=json.loads(a.details_json or "{}") if a.details_json else None
+    )
+
+
+def _format_incident(inc: SecurityIncident) -> SecurityIncidentResponse:
+    return SecurityIncidentResponse(
+        id=inc.id,
+        organization_id=inc.organization_id,
+        title=inc.title,
+        severity=inc.severity,
+        status=inc.status,
+        asset_id=inc.asset_id,
+        primary_hostname=inc.primary_hostname,
+        alert_count=inc.alert_count,
+        mitre_tactics=json.loads(inc.mitre_tactics_json or "[]"),
+        mitre_techniques=json.loads(inc.mitre_techniques_json or "[]"),
+        summary=inc.summary,
+        created_at=inc.created_at,
+        updated_at=inc.updated_at
+    )
+
+
+@router.get("/siem/events", response_model=List[SecurityEventResponse])
+def list_events(
+    skip: int = 0,
+    limit: int = 50,
+    category: Optional[str] = Query(None, description="Filter by EventCategory"),
+    severity: Optional[str] = Query(None, description="Filter by EventSeverity"),
+    hostname: Optional[str] = Query(None, description="Filter by hostname"),
+    search: Optional[str] = Query(None, description="Search event message or IP"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Streams normalized security events with multi-parameter filtering."""
+    query = db.query(SecurityEvent)
+
+    if category:
+        query = query.filter(SecurityEvent.category == category)
+    if severity:
+        query = query.filter(SecurityEvent.severity == severity)
+    if hostname:
+        query = query.filter(SecurityEvent.hostname == hostname)
+    if search:
+        pat = f"%{search}%"
+        query = query.filter((SecurityEvent.message.ilike(pat)) | (SecurityEvent.source_ip.ilike(pat)))
+
+    events = query.order_by(SecurityEvent.timestamp.desc()).offset(skip).limit(limit).all()
+    return [_format_event(e) for e in events]
+
+
+@router.post("/siem/events", response_model=SecurityEventResponse, status_code=status.HTTP_201_CREATED)
+def ingest_event(
+    payload: SecurityEventCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Ingests a security event, normalizes it, and evaluates real-time detection rules."""
+    event = siem_engine.ingest_event(db, payload)
+    return _format_event(event)
+
+
+@router.get("/siem/alerts", response_model=List[SecurityAlertResponse])
+def list_alerts(
+    status: Optional[str] = Query(None, description="OPEN, INVESTIGATING, CONTAINED, RESOLVED"),
+    severity: Optional[str] = Query(None, description="LOW, MEDIUM, HIGH, CRITICAL"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Lists aggregated security alerts generated by SIEM detection rules."""
+    query = db.query(SecurityAlert)
+    if status:
+        query = query.filter(SecurityAlert.status == status)
+    if severity:
+        query = query.filter(SecurityAlert.severity == severity)
+
+    alerts = query.order_by(SecurityAlert.last_seen.desc()).all()
+    return [_format_alert(a) for a in alerts]
+
+
+@router.get("/siem/incidents", response_model=List[SecurityIncidentResponse])
+def list_incidents(
+    status: Optional[str] = Query(None, description="OPEN, ACTIVE, CONTAINED, CLOSED"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Lists correlated multi-stage security incidents across assets."""
+    query = db.query(SecurityIncident)
+    if status:
+        query = query.filter(SecurityIncident.status == status)
+
+    incidents = query.order_by(SecurityIncident.updated_at.desc()).all()
+    return [_format_incident(inc) for inc in incidents]
+
+
+@router.get("/siem/mitre", response_model=MitreMatrixSummary)
+def get_mitre_matrix(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generates the interactive MITRE ATT&CK Matrix populated with active detection counts."""
+    return siem_engine.get_mitre_matrix(db)
+
+
+@router.get("/siem/kpis", response_model=SIEMKPIs)
+def get_siem_kpis(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Returns aggregated SIEM metrics, alert volumes, and category distributions."""
+    return siem_engine.get_kpis(db)
+
+
+@router.post("/siem/simulate", response_model=List[SecurityEventResponse])
+def simulate_attack(
+    payload: AttackSimulationRequest,
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SOC_MANAGER, UserRole.SOC_ANALYST, UserRole.NETWORK_ENGINEER])),
+    db: Session = Depends(get_db)
+):
+    """Injects synthetic multi-stage attack scenarios to validate detection rules and SOC workflows."""
+    events = siem_engine.simulate_attack(
+        db,
+        scenario=payload.scenario,
+        target_hostname=payload.target_hostname or "metasploitable2",
+        target_ip=payload.target_ip or "192.168.1.120"
+    )
+
+    audit = AuditLog(
+        user_id=current_user.id,
+        username=current_user.username,
+        action="ATTACK_SIMULATION_INJECTED",
+        resource_type="siem_detection",
+        status="SUCCESS",
+        details=f"Analyst '{current_user.username}' injected attack simulation '{payload.scenario}' targeting {payload.target_hostname}"
+    )
+    db.add(audit)
+    db.commit()
+
+    return [_format_event(e) for e in events]

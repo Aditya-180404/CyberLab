@@ -191,3 +191,82 @@ export interface AssetKPIs {
   by_type: Record<string, number>;
   by_criticality: Record<string, number>;
 }
+
+// SIEM & MITRE ATT&CK Types (Phase 6)
+export interface SecurityEventItem {
+  id: string;
+  organization_id: string;
+  timestamp: string;
+  category: string;
+  severity: string;
+  action: string;
+  message: string;
+  asset_id?: string;
+  hostname?: string;
+  source_ip?: string;
+  destination_ip?: string;
+  mitre_tactic?: string;
+  mitre_technique_id?: string;
+  mitre_technique_name?: string;
+  raw_data?: Record<string, any>;
+}
+
+export interface SecurityAlertItem {
+  id: string;
+  organization_id: string;
+  rule_id: string;
+  title: string;
+  description: string;
+  severity: string;
+  status: string;
+  asset_id?: string;
+  hostname?: string;
+  source_ip?: string;
+  mitre_tactic?: string;
+  mitre_technique_id?: string;
+  mitre_technique_name?: string;
+  evidence_count: number;
+  first_seen: string;
+  last_seen: string;
+  incident_id?: string;
+  details?: Record<string, any>;
+}
+
+export interface SecurityIncidentItem {
+  id: string;
+  organization_id: string;
+  title: string;
+  severity: string;
+  status: string;
+  primary_hostname?: string;
+  alert_count: number;
+  mitre_tactics: string[];
+  mitre_techniques: string[];
+  summary?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MitreTechniqueCountItem {
+  technique_id: string;
+  technique_name: string;
+  tactic: string;
+  event_count: number;
+  alert_count: number;
+  last_seen?: string;
+}
+
+export interface MitreMatrixSummaryItem {
+  total_techniques_mapped: number;
+  active_techniques_triggered: number;
+  tactics: Record<string, MitreTechniqueCountItem[]>;
+}
+
+export interface SIEMKPIsItem {
+  total_events: number;
+  total_alerts: number;
+  open_alerts: number;
+  active_incidents: number;
+  by_severity: Record<string, number>;
+  by_category: Record<string, number>;
+}

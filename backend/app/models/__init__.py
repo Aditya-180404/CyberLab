@@ -12,11 +12,17 @@ from app.models.connection import NetworkConnection
 from app.models.vm import VirtualMachine, PowerState
 from app.models.agent import Agent, AgentStatus, AgentTelemetry
 from app.models.asset import Asset, AssetType, AssetCriticality, AssetStatus
+from app.models.siem import (
+    SecurityEvent, SecurityAlert, SecurityIncident,
+    EventCategory, EventSeverity, AlertStatus, IncidentStatus
+)
 
 __all__ = [
     "Organization", "Site", "User", "UserRole", "AuditLog",
     "Topology", "NetworkSegment", "NetworkDevice", "DeviceType", "NetworkConnection",
     "VirtualMachine", "PowerState",
     "Agent", "AgentStatus", "AgentTelemetry",
-    "Asset", "AssetType", "AssetCriticality", "AssetStatus"
+    "Asset", "AssetType", "AssetCriticality", "AssetStatus",
+    "SecurityEvent", "SecurityAlert", "SecurityIncident",
+    "EventCategory", "EventSeverity", "AlertStatus", "IncidentStatus"
 ]
