@@ -1,0 +1,26 @@
+# Environments & Dependencies
+backend/venv/
+backend/.venv/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Databases & Secrets
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.local
+.env.*.local
+
+# OS Artifacts
+.DS_Store
+Thumbs.db
