@@ -15,6 +15,8 @@ from app.api.v1.soar import router as soar_router
 from app.api.v1.digital_twin import router as digital_twin_router
 from app.api.v1.purple_team import router as purple_team_router
 from app.api.v1.vulnerability import router as vulnerability_router
+from app.api.v1.sites import router as sites_router
+from app.api.v1.reports import router as reports_router
 
 api_router = APIRouter()
 
@@ -31,6 +33,9 @@ api_router.include_router(soar_router, tags=["SOAR & Incident Response"])
 api_router.include_router(digital_twin_router, tags=["Digital Twin & Attack-Path Analysis"])
 api_router.include_router(purple_team_router, tags=["Purple-Team & Attack Simulation"])
 api_router.include_router(vulnerability_router, tags=["Vulnerability Management & CVEs"])
+api_router.include_router(sites_router, tags=["Multi-Site Enterprise Fleet"])
+api_router.include_router(reports_router, tags=["Security & Compliance Reports"])
+
 
 
 

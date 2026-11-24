@@ -16,6 +16,7 @@ import { IncidentResponseSOAR } from "../components/soar/IncidentResponseSOAR";
 import { DigitalTwinView } from "../components/digital_twin/DigitalTwinView";
 import { PurpleTeamStudio } from "../components/purple_team/PurpleTeamStudio";
 import { VulnerabilityManagement } from "../components/vulnerability/VulnerabilityManagement";
+import { EnterpriseSitesView } from "../components/enterprise/EnterpriseSitesView";
 import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
@@ -101,6 +102,8 @@ export default function SOCDashboard() {
           <PurpleTeamStudio authToken={authToken} />
         ) : currentTab === "Vulnerabilities" ? (
           <VulnerabilityManagement authToken={authToken} />
+        ) : currentTab === "Multi-Site Fleet" ? (
+          <EnterpriseSitesView authToken={authToken} />
         ) : (
           <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
             {/* Welcome Banner */}
@@ -111,7 +114,7 @@ export default function SOCDashboard() {
                     CyberLab Security Operations Center
                   </h1>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    PHASE 3 VM INTEGRATION ACTIVE
+                    ALL 12 MODULES OPERATIONAL - v1.0 RELEASE
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">

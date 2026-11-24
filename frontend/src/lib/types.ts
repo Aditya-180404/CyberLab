@@ -596,5 +596,75 @@ export interface VulnerabilityKPIsItem {
   average_cvss_score: number;
 }
 
+// Multi-Site & Enterprise Reporting Types (Phase 12)
+export interface SiteItem {
+  id: string;
+  organization_id: string;
+  name: string;
+  description?: string;
+  location?: string;
+  status: string;
+  ip_range?: string;
+  created_at: string;
+}
+
+export interface SiteStatsItem {
+  site_id: string;
+  name: string;
+  location?: string;
+  status: string;
+  total_assets: number;
+  active_agents: number;
+  open_incidents: number;
+  critical_vulnerabilities: number;
+  average_risk_score: number;
+}
+
+export interface TopRiskItem {
+  category: string;
+  item_name: string;
+  severity: string;
+  impact: string;
+  recommended_action: string;
+}
+
+export interface ExecutiveReportItem {
+  report_id: string;
+  title: string;
+  organization_name: string;
+  generated_at: string;
+  overall_posture_score: number;
+  posture_level: "EXCELLENT" | "ACCEPTABLE" | "AT_RISK" | "CRITICAL";
+  executive_summary: string;
+  kpi_summary: Record<string, any>;
+  top_risks: TopRiskItem[];
+  remediation_recommendations: string[];
+  report_markdown: string;
+}
+
+export interface ComplianceControlItem {
+  control_id: string;
+  family: string;
+  title: string;
+  status: "COMPLIANT" | "PARTIAL" | "NON_COMPLIANT";
+  coverage_score_pct: number;
+  evidence: string;
+}
+
+export interface ComplianceReportItem {
+  report_id: string;
+  title: string;
+  organization_name: string;
+  standard: string;
+  generated_at: string;
+  compliance_score_pct: number;
+  certification_status: "AUDIT_READY" | "CONDITIONALLY_COMPLIANT" | "NON_COMPLIANT";
+  summary: string;
+  controls: ComplianceControlItem[];
+  evidence_count: number;
+  report_markdown: string;
+}
+
+
 
 

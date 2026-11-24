@@ -41,6 +41,8 @@ from app.schemas.vulnerability import (
     VulnerabilityResponse, AssetVulnerabilityItem, AssetVulnerabilitySummary,
     ScanAssetsRequest, ScanResultResponse, RemediateVulnerabilityRequest, VulnerabilityKPIs
 )
+from app.schemas.site import SiteCreate, SiteUpdate, SiteResponse, SiteStatsResponse
+from app.schemas.report import ExecutiveReportResponse, ComplianceReportResponse, TopRiskItem, ComplianceControlItem
 
 __all__ = [
     "LoginRequest", "TokenResponse", "TokenPayload",
@@ -66,5 +68,7 @@ __all__ = [
     "SimulationExecutionResponse", "RunCampaignRequest", "RunCampaignResponse",
     "MitreCoverageItem", "MitreCoverageResponse", "PurpleTeamKPIs",
     "VulnerabilityResponse", "AssetVulnerabilityItem", "AssetVulnerabilitySummary",
-    "ScanAssetsRequest", "ScanResultResponse", "RemediateVulnerabilityRequest", "VulnerabilityKPIs"
+    "ScanAssetsRequest", "ScanResultResponse", "RemediateVulnerabilityRequest", "VulnerabilityKPIs",
+    "SiteCreate", "SiteUpdate", "SiteResponse", "SiteStatsResponse",
+    "ExecutiveReportResponse", "ComplianceReportResponse", "TopRiskItem", "ComplianceControlItem"
 ]

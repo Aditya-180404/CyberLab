@@ -34,6 +34,10 @@ import {
   AssetVulnerabilitySummary,
   ScanResultResponse,
   VulnerabilityKPIsItem,
+  SiteItem,
+  SiteStatsItem,
+  ExecutiveReportItem,
+  ComplianceReportItem,
 } from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
@@ -645,6 +649,68 @@ export async function fetchVulnerabilityKPIs(token: string): Promise<Vulnerabili
   if (!res.ok) throw new Error("Failed to fetch vulnerability KPIs");
   return await res.json();
 }
+
+// Multi-Site & Enterprise Reporting API (Phase 12)
+export async function fetchSites(token: string): Promise<SiteItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/sites`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch enterprise sites");
+  return await res.json();
+}
+
+export async function fetchSiteStats(token: string): Promise<SiteStatsItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/sites/stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch site statistics");
+  return await res.json();
+}
+
+export async function createSite(
+  token: string,
+  payload: { name: string; description?: string; location?: string; ip_range?: string }
+): Promise<SiteItem> {
+  const res = await fetch(`${BACKEND_BASE}/sites`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Site creation failed");
+  }
+  return await res.json();
+}
+
+export async function deleteSite(token: string, siteId: string): Promise<{ status: string; message: string }> {
+  const res = await fetch(`${BACKEND_BASE}/sites/${siteId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to delete site");
+  return await res.json();
+}
+
+export async function fetchExecutiveReport(token: string): Promise<ExecutiveReportItem> {
+  const res = await fetch(`${BACKEND_BASE}/reports/executive`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to generate executive report");
+  return await res.json();
+}
+
+export async function fetchComplianceReport(token: string, standard?: string): Promise<ComplianceReportItem> {
+  const url = standard
+    ? `${BACKEND_BASE}/reports/compliance?standard=${encodeURIComponent(standard)}`
+    : `${BACKEND_BASE}/reports/compliance`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to generate compliance report");
+  return await res.json();
+}
+
 
 
 

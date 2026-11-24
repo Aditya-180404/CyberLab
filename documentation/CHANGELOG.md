@@ -4,6 +4,45 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [v1.0.0 Production Release: Phase 12 - Multi-Site Enterprise Fleet, PostgreSQL Migration Path & Platform Hardening] - 2026-11-24
+
+### Added
+- **Multi-Site Enterprise Fleet Management (`backend/app/enterprise/site_service.py`)**:
+  - `SiteService`: Enterprise site isolation, lifecycle management, and live fleet telemetry aggregation across distributed zones, clouds, and on-premises nodes.
+  - Dynamic Fleet Aggregation: Calculates real-time telemetry metrics per site and across the entire enterprise: total assets, active online agents, open security incidents, critical unmitigated CVEs, and composite average risk score (0–100).
+  - Multi-Site Data Model (`backend/app/models/site.py`, `backend/app/schemas/site.py`): Extended `Site` entity with `location`, `status` (`ACTIVE`, `INACTIVE`, `MAINTENANCE`), `ip_range` CIDR blocks, and foreign-key association with `Asset`.
+- **Enterprise Executive Reporting & Compliance Engine (`backend/app/enterprise/report_generator.py`)**:
+  - `EnterpriseReportGenerator`: Synthesizes telemetry into executive board-level scorecards and regulatory compliance audit reports.
+  - Executive Posture Scorecard: Evaluates enterprise posture score (0–100) and posture tiers (`EXCELLENT`, `ACCEPTABLE`, `AT_RISK`, `CRITICAL`), top strategic risks, and prioritized remediation roadmap in structured JSON and publication-ready Markdown.
+  - Regulatory Compliance Framework Auditing: Continuously audits live platform controls against **NIST Cybersecurity Framework 2.0 (NIST CSF 2.0)** (Govern, Identify, Protect, Detect, Respond, Recover) and **CIS Critical Security Controls v8** (CIS 01, 02, 07, 08, 10, 17) with automated evidence collection and readiness percentage scoring.
+- **REST API Endpoints (`backend/app/api/v1/sites.py`, `backend/app/api/v1/reports.py`)**:
+  - `GET /api/v1/sites`: List registered enterprise sites.
+  - `GET /api/v1/sites/stats`: Aggregated live fleet statistics per site.
+  - `POST /api/v1/sites`: Register a new enterprise site or branch lab.
+  - `GET /api/v1/sites/{id}`: Site configuration details.
+  - `PUT /api/v1/sites/{id}`: Update site metadata, location, and CIDR range.
+  - `DELETE /api/v1/sites/{id}`: Remove site with safe asset preservation.
+  - `GET /api/v1/reports/executive`: Generate executive posture scorecard.
+  - `GET /api/v1/reports/compliance?standard=...`: Generate NIST CSF 2.0 or CIS Controls compliance audit report.
+- **Frontend Multi-Site Fleet & Governance Workspace (`frontend/src/components/enterprise/EnterpriseSitesView.tsx`)**:
+  - Fleet KPI Bar: Total Sites, Total Assets, Active Agents, Open Incidents, Critical CVEs, and Fleet Posture Score.
+  - 3 Dedicated Sub-Views:
+    1. *Multi-Site Fleet*: Site cards with active badges, location tags, asset/agent/incident counters, risk meters, and "Register Enterprise Site" modal.
+    2. *Executive Posture Scorecard*: Posture gauge, executive summary, top strategic risks, prioritized remediation roadmap, and one-click markdown report download/copy.
+    3. *Compliance & Audit Readiness*: Framework switcher (NIST CSF 2.0 / CIS Controls v8), compliance readiness gauge, control family evaluation cards with evidence strings, and audit markdown export.
+  - Sidebar Navigation updated to **`v1.0`** with `Multi-Site Fleet` marked **`ACTIVE`**.
+  - Dashboard Architecture Matrix updated: **`All 12 Phases Active (12/12) - Production Release v1.0`**.
+- **PostgreSQL Enterprise Migration Path & Hardening**:
+  - `backend/app/database/session.py`: Dual-database abstraction supporting seamless zero-recode transition between SQLite WAL (development/single-node) and PostgreSQL 15+ (production enterprise).
+  - `documentation/POSTGRESQL_MIGRATION.md`: Complete enterprise guide covering connection pooling, Alembic migration workflows, `pgloader` SQLite-to-Postgres transfer, and production security hardening.
+  - `documentation/MULTI_SITE_ENTERPRISE.md`: Complete architecture and API documentation for multi-site fleet operations and regulatory compliance auditing.
+- **Automated Test Suite Expansion (`backend/tests/test_multi_site_reports.py`)**:
+  - 6 new automated tests verifying site lifecycle, live stats aggregation, executive scorecard generation, compliance audit evidence collection, and REST API routing.
+  - Full backend test suite passing at **71 tests** in 13.04s.
+  - Frontend production build verified clean with **Next.js 14.2.18**.
+
+---
+
 ## [Phase 11: Vulnerability Management & Asset Risk Scoring Engine] - 2026-11-24
 
 ### Added
