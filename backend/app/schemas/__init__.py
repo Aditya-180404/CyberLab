@@ -32,6 +32,11 @@ from app.schemas.soar import (
     SOARPlaybookResponse, SOARActionCreateRequest, SOARActionResponse,
     SOARApprovalDecisionRequest, SOARKPIs
 )
+from app.schemas.purple_team import (
+    SimulationScenarioResponse, ExecuteScenarioRequest, ValidationResultResponse,
+    SimulationExecutionResponse, RunCampaignRequest, RunCampaignResponse,
+    MitreCoverageItem, MitreCoverageResponse, PurpleTeamKPIs
+)
 
 __all__ = [
     "LoginRequest", "TokenResponse", "TokenPayload",
@@ -52,5 +57,8 @@ __all__ = [
     "SecurityEventCreate", "SecurityEventResponse", "SecurityAlertResponse", "SecurityIncidentResponse",
     "MitreTechniqueCount", "MitreMatrixSummary", "SIEMKPIs", "AttackSimulationRequest",
     "SOARPlaybookResponse", "SOARActionCreateRequest", "SOARActionResponse",
-    "SOARApprovalDecisionRequest", "SOARKPIs"
+    "SOARApprovalDecisionRequest", "SOARKPIs",
+    "SimulationScenarioResponse", "ExecuteScenarioRequest", "ValidationResultResponse",
+    "SimulationExecutionResponse", "RunCampaignRequest", "RunCampaignResponse",
+    "MitreCoverageItem", "MitreCoverageResponse", "PurpleTeamKPIs"
 ]

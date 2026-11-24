@@ -17,6 +17,10 @@ from app.models.siem import (
     EventCategory, EventSeverity, AlertStatus, IncidentStatus
 )
 from app.models.soar import SOARPlaybook, SOARAction, ActionType, ActionStatus
+from app.models.purple_team import (
+    SimulationScenario, SimulationExecution, ValidationResult,
+    SimulationStatus, DetectionStatus
+)
 
 __all__ = [
     "Organization", "Site", "User", "UserRole", "AuditLog",
@@ -26,5 +30,7 @@ __all__ = [
     "Asset", "AssetType", "AssetCriticality", "AssetStatus",
     "SecurityEvent", "SecurityAlert", "SecurityIncident",
     "EventCategory", "EventSeverity", "AlertStatus", "IncidentStatus",
-    "SOARPlaybook", "SOARAction", "ActionType", "ActionStatus"
+    "SOARPlaybook", "SOARAction", "ActionType", "ActionStatus",
+    "SimulationScenario", "SimulationExecution", "ValidationResult",
+    "SimulationStatus", "DetectionStatus"
 ]

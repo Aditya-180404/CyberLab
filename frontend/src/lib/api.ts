@@ -24,6 +24,11 @@ import {
   AttackPathResponse,
   BlastRadiusResponse,
   ChokePointResponse,
+  SimulationScenarioItem,
+  SimulationExecutionItem,
+  RunCampaignResponse,
+  MitreCoverageResponse,
+  PurpleTeamKPIsItem,
 } from "./types";
 
 const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
@@ -493,4 +498,75 @@ export async function resetDigitalTwinSimulation(token: string) {
   if (!res.ok) throw new Error("Simulation reset failed");
   return await res.json();
 }
+
+// Purple-Team & Attack Simulation API (Phase 9)
+export async function fetchSimulationScenarios(token: string, tactic?: string): Promise<SimulationScenarioItem[]> {
+  const url = tactic
+    ? `${BACKEND_BASE}/purple-team/scenarios?tactic=${encodeURIComponent(tactic)}`
+    : `${BACKEND_BASE}/purple-team/scenarios`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch simulation scenarios");
+  return await res.json();
+}
+
+export async function executeSimulationScenario(
+  token: string,
+  scenarioId: string,
+  targetAssetId?: string
+): Promise<SimulationExecutionItem> {
+  const res = await fetch(`${BACKEND_BASE}/purple-team/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ scenario_id: scenarioId, target_asset_id: targetAssetId }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Scenario execution failed");
+  }
+  return await res.json();
+}
+
+export async function runPurpleTeamCampaign(
+  token: string,
+  targetAssetId?: string,
+  tacticFilter?: string
+): Promise<RunCampaignResponse> {
+  const res = await fetch(`${BACKEND_BASE}/purple-team/run-campaign`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ target_asset_id: targetAssetId, tactic_filter: tacticFilter }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || "Campaign execution failed");
+  }
+  return await res.json();
+}
+
+export async function fetchSimulationExecutions(token: string, limit = 25): Promise<SimulationExecutionItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/purple-team/executions?limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch simulation executions");
+  return await res.json();
+}
+
+export async function fetchMitreCoverage(token: string): Promise<MitreCoverageResponse> {
+  const res = await fetch(`${BACKEND_BASE}/purple-team/coverage`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch MITRE coverage");
+  return await res.json();
+}
+
+export async function fetchPurpleTeamKPIs(token: string): Promise<PurpleTeamKPIsItem> {
+  const res = await fetch(`${BACKEND_BASE}/purple-team/kpis`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch Purple-Team KPIs");
+  return await res.json();
+}
+
 

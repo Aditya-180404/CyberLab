@@ -447,3 +447,85 @@ export interface ChokePointResponse {
   summary: string;
 }
 
+// Purple-Team Validation & Attack Simulation Types (Phase 9)
+export interface SimulationScenarioItem {
+  id: string;
+  name: string;
+  mitre_tactic: string;
+  mitre_technique_id: string;
+  mitre_technique_name: string;
+  description: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  safe_payload_type: string;
+  command_template?: string;
+  expected_detection_rule?: string;
+  is_atomic: boolean;
+  created_at: string;
+}
+
+export interface ValidationResultItem {
+  id: string;
+  execution_id: string;
+  detection_status: "DETECTED" | "MISSED" | "BLOCKED" | "PENDING_VERIFICATION";
+  matched_alert_id?: string;
+  matched_rule_id?: string;
+  detection_latency_seconds: number;
+  verification_details?: string;
+  created_at: string;
+}
+
+export interface SimulationExecutionItem {
+  id: string;
+  organization_id: string;
+  scenario_id: string;
+  scenario_name?: string;
+  mitre_technique_id?: string;
+  mitre_tactic?: string;
+  target_asset_id?: string;
+  target_name?: string;
+  executed_by: string;
+  status: "SCHEDULED" | "RUNNING" | "COMPLETED" | "FAILED";
+  executed_at: string;
+  completed_at: string;
+  execution_log?: string;
+  validation_result?: ValidationResultItem;
+}
+
+export interface RunCampaignResponse {
+  campaign_id: string;
+  total_scenarios_executed: number;
+  detected_count: number;
+  missed_count: number;
+  efficacy_rate_pct: number;
+  executions: SimulationExecutionItem[];
+}
+
+export interface MitreCoverageItem {
+  tactic: string;
+  technique_id: string;
+  technique_name: string;
+  total_simulated: number;
+  detected_count: number;
+  coverage_status: "COVERED" | "PARTIAL" | "GAP";
+  detection_efficacy_pct: number;
+  rule_name?: string;
+}
+
+export interface MitreCoverageResponse {
+  total_techniques_tested: number;
+  covered_techniques: number;
+  gap_techniques: number;
+  overall_coverage_pct: number;
+  coverage_items: MitreCoverageItem[];
+}
+
+export interface PurpleTeamKPIsItem {
+  total_simulations: number;
+  total_detected: number;
+  total_missed: number;
+  overall_efficacy_rate: number;
+  mean_time_to_detect_seconds: number;
+  by_tactic_efficacy: Record<string, number>;
+}
+
+

@@ -13,6 +13,7 @@ from app.api.v1.assets import router as assets_router
 from app.api.v1.siem import router as siem_router
 from app.api.v1.soar import router as soar_router
 from app.api.v1.digital_twin import router as digital_twin_router
+from app.api.v1.purple_team import router as purple_team_router
 
 api_router = APIRouter()
 
@@ -27,4 +28,6 @@ api_router.include_router(assets_router, tags=["Asset Inventory & Posture"])
 api_router.include_router(siem_router, tags=["SIEM & Detection Engine"])
 api_router.include_router(soar_router, tags=["SOAR & Incident Response"])
 api_router.include_router(digital_twin_router, tags=["Digital Twin & Attack-Path Analysis"])
+api_router.include_router(purple_team_router, tags=["Purple-Team & Attack Simulation"])
+
 

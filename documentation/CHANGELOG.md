@@ -4,6 +4,49 @@ All notable changes to the CyberLab platform are documented in this file.
 
 ---
 
+## [Phase 9-10: Purple-Team Validation Studio & Attack Simulation] - 2026-11-24
+
+### Added
+- **Purple-Team Validation & Simulation Engine (`backend/app/purple_team/`)**:
+  - `PurpleTeamEngine` (`engine.py`): Continuous security control validation framework combining atomic attack simulations with SIEM/EDR detection verification.
+  - Safe & Bounded Atomic Scenario Catalog:
+    - `scen-t1082-sysinfo`: System Information Discovery (`T1082`, Discovery, benign `uname -a` baseline query).
+    - `scen-t1033-userinfo`: Security Account Discovery (`T1033`, Discovery, benign `id && whoami` query).
+    - `scen-t1110-brute-force`: SSH Authentication Brute Force (`T1110`, Credential Access, 6 rapid failed attempts verifying `RULE_AUTH_BRUTE_FORCE`).
+    - `scen-t1548-sudo-abuse`: Sudo Rights Abuse (`T1548.003`, Privilege Escalation, unauthorized sudo invocation verifying `RULE_PRIVILEGE_ESCALATION_SUDO`).
+    - `scen-t1003-shadow-dump`: /etc/shadow Canary Access (`T1003.008`, Credential Access, read probe verifying `RULE_CREDENTIAL_DUMPING_SHADOW`).
+    - `scen-t1046-port-scan`: Network Service Recon (`T1046`, Discovery, multi-port SYN probe verifying `RULE_PORT_SCAN_RECON`).
+    - `scen-t1059-shell-exec`: Suspicious Shell Command (`T1059.004`, Execution, base64 subshell probe verifying `RULE_SUSPICIOUS_REVERSE_SHELL`).
+  - Closed-Loop SIEM Detection Verification: Correlates injected telemetry against generated `SecurityAlert` records within the test window to classify outcomes as `DETECTED` or `MISSED`.
+  - Batch Purple-Team Campaigns (`run_campaign`): Automated execution across the atomic test suite measuring detection efficacy rates and Mean Time to Detect (MTTD).
+  - MITRE ATT&CK Defensive Heatmap & Gap Analysis (`get_coverage_matrix`): Categorizes tested techniques into `COVERED` (100% detection), `PARTIAL`, or `GAP` (blind spot requiring SIEM rule creation).
+- **Relational Models & Schemas (`backend/app/models/purple_team.py`, `backend/app/schemas/purple_team.py`)**:
+  - `SimulationScenario`: Atomic test definitions mapped to MITRE tactics, safe payload types, and expected detection rules.
+  - `SimulationExecution`: Execution records tracking target asset, dispatch timestamp, operator, execution logs, and telemetry.
+  - `ValidationResult`: Verification records capturing detection status (`DETECTED`, `MISSED`, `BLOCKED`), matched alert ID, rule ID, and detection latency.
+  - Pydantic v2 schemas: `SimulationScenarioResponse`, `ExecuteScenarioRequest`, `ValidationResultResponse`, `SimulationExecutionResponse`, `RunCampaignRequest`, `RunCampaignResponse`, `MitreCoverageResponse`, `PurpleTeamKPIs`.
+- **REST API Endpoints (`backend/app/api/v1/purple_team.py`)**:
+  - `GET /api/v1/purple-team/scenarios`: Lists atomic scenarios with optional tactic filter.
+  - `POST /api/v1/purple-team/execute`: Dispatches an atomic test against an authorized asset.
+  - `POST /api/v1/purple-team/run-campaign`: Executes an automated purple-team validation campaign.
+  - `GET /api/v1/purple-team/executions`: Historical execution log and detection results.
+  - `GET /api/v1/purple-team/coverage`: MITRE ATT&CK defensive detection coverage matrix.
+  - `GET /api/v1/purple-team/kpis`: Real-time efficacy rate, MTTD, and by-tactic statistics.
+- **Frontend Purple-Team Studio (`frontend/src/components/purple_team/PurpleTeamStudio.tsx`)**:
+  - KPI Header Bar: Simulations Run, Detection Efficacy Rate (%), Mean Time to Detect (s), Coverage Gaps Identified.
+  - 3 Interactive Sub-Views:
+    1. *Atomic Test Catalog*: Tactic filter pills, target asset selector, command preview blocks, expected SIEM rule tags, and "Execute Atomic Test" triggers.
+    2. *Validation Runs & Log*: Chronological execution table with `DETECTED` vs `MISSED` badges, latency metrics, and run inspection drawer with terminal logs.
+    3. *MITRE ATT&CK Defensive Heatmap & Gaps*: Multi-column matrix showing covered techniques vs detection blind spots needing rule authoring.
+  - Sidebar updated to platform version **`v0.9`** with `Purple-Team Studio` marked **`ACTIVE`**.
+- **Automated Tests (`backend/tests/test_purple_team.py`)**:
+  - 7 comprehensive tests verifying scenario catalog seeding, detected execution, missed gap detection, automated campaign execution, MITRE coverage matrix, KPIs, and REST API endpoints.
+  - Full backend test suite expanded to **59 passing tests**.
+- **Documentation**:
+  - `documentation/PURPLE_TEAM.md`: Comprehensive specification of the purple-team validation framework, atomic scenarios, efficacy formulations, and API endpoints.
+
+---
+
 ## [Phase 8: Digital Twin & Attack-Path Analysis Engine] - 2026-11-24
 
 ### Added
