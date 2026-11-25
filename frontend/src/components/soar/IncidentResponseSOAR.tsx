@@ -170,7 +170,7 @@ export function IncidentResponseSOAR({ authToken }: IncidentResponseSOARProps) {
               <span>SOAR &amp; Automated Incident Response</span>
             </h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              PHASE 7 ACTIVE
+              SOAR ENGINE ACTIVE
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">

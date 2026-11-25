@@ -3,14 +3,14 @@
 import React from "react";
 import { CheckCircle2, Clock } from "lucide-react";
 
-interface PhaseItem {
+interface ModuleItem {
   id: number;
   name: string;
   status: "COMPLETE" | "PLANNED";
   summary: string;
 }
 
-const ROADMAP: PhaseItem[] = [
+const MODULES: ModuleItem[] = [
   { id: 1, name: "Core Foundation", status: "COMPLETE", summary: "FastAPI, Next.js, SQLite WAL, RBAC, Health, Audit" },
   { id: 2, name: "Network Simulation Engine", status: "COMPLETE", summary: "Linux netns, veth pairs, Linux bridges, nftables, React Flow" },
   { id: 3, name: "Real VM Integration", status: "COMPLETE", summary: "VMware Workstation CLI adapter, VM power states, vNIC bridging" },
@@ -30,19 +30,19 @@ export function ModuleMatrixCard() {
     <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur shadow-sm">
       <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
         <h2 className="text-sm font-semibold tracking-wide text-slate-100 uppercase font-mono">
-          Architecture & Roadmap Execution Matrix
+          Architecture & Platform Module Matrix
         </h2>
         <span className="text-xs font-mono text-emerald-400">
-          All 12 Phases Active (12/12) - Production Release v1.0
+          All 12 Modules Active (12/12) - Production Release v1.0
         </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {ROADMAP.map((phase) => {
-          const isComplete = phase.status === "COMPLETE";
+        {MODULES.map((mod) => {
+          const isComplete = mod.status === "COMPLETE";
           return (
             <div
-              key={phase.id}
+              key={mod.id}
               className={`p-3 rounded-lg border text-xs transition ${
                 isComplete
                   ? "bg-cyan-950/20 border-cyan-500/40 text-slate-200"
@@ -51,7 +51,7 @@ export function ModuleMatrixCard() {
             >
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-mono text-[11px] font-semibold text-slate-300">
-                  Phase {phase.id}
+                  Module {mod.id}
                 </span>
                 {isComplete ? (
                   <span className="flex items-center space-x-1 text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
@@ -65,8 +65,8 @@ export function ModuleMatrixCard() {
                   </span>
                 )}
               </div>
-              <div className="font-medium text-slate-100 mb-1">{phase.name}</div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">{phase.summary}</p>
+              <div className="font-medium text-slate-100 mb-1">{mod.name}</div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">{mod.summary}</p>
             </div>
           );
         })}

@@ -221,7 +221,7 @@ export function EnterpriseSitesView({ authToken }: EnterpriseSitesViewProps) {
               <span>Multi-Site Enterprise Fleet & Governance</span>
             </h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-              PHASE 12 v1.0 PRODUCTION
+              v1.0 PRODUCTION
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">

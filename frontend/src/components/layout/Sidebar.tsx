@@ -20,25 +20,24 @@ import {
 
 interface NavItem {
   name: string;
-  phase: string;
   icon: React.ComponentType<{ className?: string }>;
   status: "ACTIVE" | "PLANNED";
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { name: "SOC Dashboard", phase: "Phase 1", icon: ShieldAlert, status: "ACTIVE" },
-  { name: "Network Studio", phase: "Phase 2", icon: Network, status: "ACTIVE" },
-  { name: "Virtual Machines", phase: "Phase 3", icon: Server, status: "ACTIVE" },
-  { name: "Endpoint Fleet", phase: "Phase 4", icon: Radio, status: "ACTIVE" },
-  { name: "Asset Inventory", phase: "Phase 5", icon: Layers, status: "ACTIVE" },
-  { name: "SIEM & Correlation", phase: "Phase 6", icon: FileSearch, status: "ACTIVE" },
-  { name: "Incident Response", phase: "Phase 7", icon: Crosshair, status: "ACTIVE" },
-  { name: "Digital Twin", phase: "Phase 8", icon: GitBranch, status: "ACTIVE" },
-  { name: "Purple-Team Studio", phase: "Phase 9-10", icon: ShieldCheck, status: "ACTIVE" },
-  { name: "Vulnerabilities", phase: "Phase 11", icon: AlertTriangle, status: "ACTIVE" },
-  { name: "Multi-Site Fleet", phase: "Phase 12", icon: Globe, status: "ACTIVE" },
-  { name: "Audit Trail", phase: "Phase 1", icon: History, status: "ACTIVE" },
-  { name: "Settings & RBAC", phase: "Phase 1", icon: Settings, status: "ACTIVE" },
+  { name: "SOC Dashboard", icon: ShieldAlert, status: "ACTIVE" },
+  { name: "Network Studio", icon: Network, status: "ACTIVE" },
+  { name: "Virtual Machines", icon: Server, status: "ACTIVE" },
+  { name: "Endpoint Fleet", icon: Radio, status: "ACTIVE" },
+  { name: "Asset Inventory", icon: Layers, status: "ACTIVE" },
+  { name: "SIEM & Correlation", icon: FileSearch, status: "ACTIVE" },
+  { name: "Incident Response", icon: Crosshair, status: "ACTIVE" },
+  { name: "Digital Twin", icon: GitBranch, status: "ACTIVE" },
+  { name: "Purple-Team Studio", icon: ShieldCheck, status: "ACTIVE" },
+  { name: "Vulnerabilities", icon: AlertTriangle, status: "ACTIVE" },
+  { name: "Multi-Site Fleet", icon: Globe, status: "ACTIVE" },
+  { name: "Audit Trail", icon: History, status: "ACTIVE" },
+  { name: "Settings & RBAC", icon: Settings, status: "ACTIVE" },
 ];
 
 export function Sidebar({ currentTab, onSelectTab }: { currentTab: string; onSelectTab: (tab: string) => void }) {
@@ -85,15 +84,9 @@ export function Sidebar({ currentTab, onSelectTab }: { currentTab: string; onSel
                   <Icon className={`w-4 h-4 ${isSelected ? "text-cyan-400" : "text-slate-400"}`} />
                   <span>{item.name}</span>
                 </div>
-                <span
-                  className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
-                    isActive
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                      : "bg-slate-800/60 text-slate-400 border-slate-700/50"
-                  }`}
-                >
-                  {item.phase}
-                </span>
+                {isSelected && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+                )}
               </button>
             );
           })}

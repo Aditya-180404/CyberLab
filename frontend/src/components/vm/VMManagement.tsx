@@ -81,7 +81,7 @@ export function VMManagement({ authToken }: { authToken: string | null }) {
               VMware Workstation Hypervisor Control
             </h1>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              PHASE 3 ACTIVE
+              HYPERVISOR ACTIVE
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
