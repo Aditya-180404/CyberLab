@@ -33,16 +33,15 @@ import {
   previewTopology,
   deployTopology,
   teardownTopology,
-  fetchVMs,
   fetchAgents,
 } from "../../lib/api";
-import { VirtualMachineItem, AgentItem } from "../../lib/types";
+import { AgentItem } from "../../lib/types";
 
 function inferDeviceType(name: string): "router" | "switch" | "firewall" | "server" | "endpoint" {
   const lower = name.toLowerCase();
   if (/opensense|opnsense|pfsense|fw|firewall/.test(lower)) return "firewall";
   if (/router|gateway/.test(lower)) return "router";
-  if (/metasploit|vulnhub|mrrobot|server|web|db/.test(lower)) return "server";
+  if (/web|db|srv|server|api|prod/.test(lower)) return "server";
   return "endpoint";
 }
 
@@ -69,101 +68,53 @@ export function NetworkStudio({ authToken }: { authToken: string | null }) {
     }
 
     try {
-      const [vms, agents]: [VirtualMachineItem[], AgentItem[]] = await Promise.all([
-        fetchVMs(authToken).catch(() => []),
-        fetchAgents(authToken).catch(() => []),
-      ]);
-
-      const runningVMs = vms.filter((v) => v.power_state === "RUNNING");
+      const agents: AgentItem[] = await fetchAgents(authToken).catch(() => []);
       const activeAgents = agents.filter((a) => a.status === "ONLINE" || a.status === "ISOLATED");
 
       const liveNodes: Node[] = [];
       const liveEdges: Edge[] = [];
-      const createdSwitches = new Set<string>();
+      const createdGroups = new Set<string>();
 
-      // Group running VMs by primary virtual network (vnet)
-      runningVMs.forEach((vm, idx) => {
-        const primaryAdapter = vm.network_adapters?.[0];
-        const vnet = primaryAdapter?.vnet || (primaryAdapter?.is_bridged ? "bridged" : "vmnet1");
-        const swId = `live-sw-${vnet}`;
+      activeAgents.forEach((agent, idx) => {
+        const osGroup = (agent.os_type || "Linux").toUpperCase();
+        const swId = `live-sw-${osGroup}`;
 
-        if (!createdSwitches.has(swId)) {
-          createdSwitches.add(swId);
+        if (!createdGroups.has(swId)) {
+          createdGroups.add(swId);
           liveNodes.push({
             id: swId,
             type: "deviceNode",
-            position: { x: 280 + createdSwitches.size * 220 - 220, y: 80 },
+            position: { x: 280 + (createdGroups.size - 1) * 260, y: 70 },
             data: {
-              label: vnet.toUpperCase(),
+              label: `${osGroup}-FLEET`,
               deviceType: "switch",
-              vlanId: vnet === "vmnet1" ? 101 : 1,
+              vlanId: createdGroups.size * 10,
               status: "RUNNING",
             },
           });
         }
 
-        const vmNodeId = `live-vm-${vm.id}`;
-        const devType = inferDeviceType(vm.name);
-        liveNodes.push({
-          id: vmNodeId,
-          type: "deviceNode",
-          position: { x: 120 + (idx % 3) * 230, y: 240 + Math.floor(idx / 3) * 150 },
-          data: {
-            label: vm.name,
-            deviceType: devType,
-            ipAddress: primaryAdapter?.mac_address || vm.os_type,
-            status: "RUNNING",
-          },
-        });
-
-        liveEdges.push({
-          id: `live-edge-${vm.id}`,
-          source: swId,
-          target: vmNodeId,
-          animated: true,
-        });
-      });
-
-      // Add online/isolated EDR agents not already represented by a running VM
-      const vmNames = new Set(runningVMs.map((v) => v.name.toLowerCase()));
-      const extraAgents = activeAgents.filter((a) => !vmNames.has(a.hostname.toLowerCase()));
-      if (extraAgents.length > 0 && !createdSwitches.has("live-sw-lan")) {
-        createdSwitches.add("live-sw-lan");
-        liveNodes.push({
-          id: "live-sw-lan",
-          type: "deviceNode",
-          position: { x: 280 + createdSwitches.size * 220 - 220, y: 80 },
-          data: {
-            label: "ENDPOINT-FLEET",
-            deviceType: "switch",
-            vlanId: 10,
-            status: "RUNNING",
-          },
-        });
-      }
-
-      extraAgents.forEach((agent, idx) => {
         const agNodeId = `live-agent-${agent.id}`;
         liveNodes.push({
           id: agNodeId,
           type: "deviceNode",
-          position: { x: 120 + ((runningVMs.length + idx) % 3) * 230, y: 240 + Math.floor((runningVMs.length + idx) / 3) * 150 },
+          position: { x: 100 + (idx % 3) * 230, y: 230 + Math.floor(idx / 3) * 150 },
           data: {
             label: agent.hostname,
-            deviceType: "endpoint",
+            deviceType: inferDeviceType(agent.hostname),
             ipAddress: agent.ip_address,
             status: agent.status === "ISOLATED" ? "ERROR" : "RUNNING",
           },
         });
         liveEdges.push({
           id: `live-edge-ag-${agent.id}`,
-          source: "live-sw-lan",
+          source: swId,
           target: agNodeId,
           animated: agent.status !== "ISOLATED",
         });
       });
 
-      setLiveCount(runningVMs.length + extraAgents.length);
+      setLiveCount(activeAgents.length);
 
       setNodes((prev) => {
         const manualNodes = prev.filter((n) => n.id.startsWith("manual-"));
@@ -379,8 +330,8 @@ export function NetworkStudio({ authToken }: { authToken: string | null }) {
                 </div>
                 <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                   {authToken
-                    ? "Start a VM in VMware Workstation or connect a Linux endpoint agent. Running systems will appear here automatically."
-                    : "Sign in on the SOC Dashboard to monitor active VMs and endpoint agents."}
+                    ? "Start CyberLab agents on company endpoints or Docker fleet nodes. Connected systems will appear here automatically."
+                    : "Sign in on the SOC Dashboard to monitor active connected systems."}
                 </p>
               </div>
             </div>

@@ -58,6 +58,52 @@ services:
     ports:
       - "3000:3000"
 
+  # Multi-System Fleet Nodes (Live Containerized Endpoints reporting telemetry)
+  corp-web-01:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: cyberlab-sys-web-01
+    hostname: corp-web-01
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      CYBERLAB_HOSTNAME: corp-web-01
+      CYBERLAB_ENROLLMENT_KEY: ${AGENT_ENROLLMENT_KEY:-}
+    command: ["python3", "/opt/cyberlab-agent/cyberlab_agent.py", "--server", "http://backend:8000", "--config", "/tmp/agent-web-01.json", "--interval", "10"]
+
+  corp-db-01:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: cyberlab-sys-db-01
+    hostname: corp-db-01
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      CYBERLAB_HOSTNAME: corp-db-01
+      CYBERLAB_ENROLLMENT_KEY: ${AGENT_ENROLLMENT_KEY:-}
+    command: ["python3", "/opt/cyberlab-agent/cyberlab_agent.py", "--server", "http://backend:8000", "--config", "/tmp/agent-db-01.json", "--interval", "10"]
+
+  finance-ws-01:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: cyberlab-sys-finance-01
+    hostname: finance-ws-01
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      CYBERLAB_HOSTNAME: finance-ws-01
+      CYBERLAB_ENROLLMENT_KEY: ${AGENT_ENROLLMENT_KEY:-}
+    command: ["python3", "/opt/cyberlab-agent/cyberlab_agent.py", "--server", "http://backend:8000", "--config", "/tmp/agent-finance-01.json", "--interval", "10"]
+
   nginx:
     image: nginx:1.27-alpine
     container_name: cyberlab-nginx

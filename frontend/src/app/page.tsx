@@ -8,7 +8,6 @@ import { QuickAuthCard } from "../components/dashboard/QuickAuthCard";
 import { ModuleMatrixCard } from "../components/dashboard/ModuleMatrixCard";
 import { RecentAuditCard } from "../components/dashboard/RecentAuditCard";
 import { NetworkStudio } from "../components/network/NetworkStudio";
-import { VMManagement } from "../components/vm/VMManagement";
 import { EndpointFleet } from "../components/agent/EndpointFleet";
 import { AssetInventory } from "../components/inventory/AssetInventory";
 import { SIEMDashboard } from "../components/siem/SIEMDashboard";
@@ -87,8 +86,6 @@ export default function SOCDashboard() {
 
         {currentTab === "Network Studio" ? (
           <NetworkStudio authToken={authToken} />
-        ) : currentTab === "Virtual Machines" ? (
-          <VMManagement authToken={authToken} />
         ) : currentTab === "Endpoint Fleet" ? (
           <EndpointFleet authToken={authToken} />
         ) : currentTab === "Asset Inventory" ? (
@@ -121,15 +118,15 @@ export default function SOCDashboard() {
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                  Central management control plane for isolated Linux network namespaces, VMware virtual machines, distributed EDR agents, SIEM telemetry, and purple-team attack simulations.
+                  Central management control plane for isolated network topologies, distributed multi-OS EDR agents, SIEM/NDR telemetry, threat intelligence, and purple-team validation.
                 </p>
               </div>
               <div className="flex items-center space-x-3 shrink-0">
                 <button
-                  onClick={() => setCurrentTab("Virtual Machines")}
+                  onClick={() => setCurrentTab("Endpoint Fleet")}
                   className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold font-mono shadow-md shadow-cyan-950 transition"
                 >
-                  Manage Real VMs →
+                  Inspect Endpoint Fleet →
                 </button>
               </div>
             </div>

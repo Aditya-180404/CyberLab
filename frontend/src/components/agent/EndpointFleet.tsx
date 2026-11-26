@@ -38,6 +38,7 @@ export function EndpointFleet({ authToken }: EndpointFleetProps) {
   const [inspectLoading, setInspectLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [showDeployGuide, setShowDeployGuide] = useState(false);
+  const [deployOS, setDeployOS] = useState<"linux" | "windows" | "macos" | "syslog">("linux");
   const [copiedCmd, setCopiedCmd] = useState(false);
 
   const loadAgents = useCallback(async () => {
@@ -127,9 +128,15 @@ export function EndpointFleet({ authToken }: EndpointFleetProps) {
     }
   };
 
+  const getDeployCommand = () => {
+    if (deployOS === "linux") return "sudo ./deploy/install-agent.sh --server http://<SOC_SERVER_IP>:8000";
+    if (deployOS === "windows") return "powershell -ExecutionPolicy Bypass -File .\\deploy\\install-agent.ps1 -ServerUrl http://<SOC_SERVER_IP>:8000";
+    if (deployOS === "macos") return "python3 agent/cyberlab_agent.py --server http://<SOC_SERVER_IP>:8000 --interval 10";
+    return "Send syslog UDP/TCP -> <SOC_SERVER_IP>:5514  |  POST /api/v1/siem/ingest/ndr";
+  };
+
   const handleCopyCmd = () => {
-    const cmd = "python3 agent/cyberlab_agent.py --server http://127.0.0.1:8000";
-    navigator.clipboard.writeText(cmd);
+    navigator.clipboard.writeText(getDeployCommand());
     setCopiedCmd(true);
     setTimeout(() => setCopiedCmd(false), 2000);
   };
@@ -184,7 +191,7 @@ export function EndpointFleet({ authToken }: EndpointFleetProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-cyan-400 font-semibold text-sm">
               <Terminal className="w-4 h-4" />
-              <span>Deploy Autonomous Agent to Linux VM or Kali Host</span>
+              <span>Connect Company Systems (Linux, Windows, macOS &amp; Firewalls)</span>
             </div>
             <button
               onClick={() => setShowDeployGuide(false)}
@@ -193,14 +200,29 @@ export function EndpointFleet({ authToken }: EndpointFleetProps) {
               <X className="w-4 h-4" />
             </button>
           </div>
+          <div className="flex flex-wrap gap-2 text-xs font-mono">
+            {(["linux", "windows", "macos", "syslog"] as const).map((osKey) => (
+              <button
+                key={osKey}
+                onClick={() => setDeployOS(osKey)}
+                className={`px-3 py-1 rounded-lg border uppercase transition ${
+                  deployOS === osKey
+                    ? "bg-cyan-600/20 text-cyan-300 border-cyan-500/40"
+                    : "bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200"
+                }`}
+              >
+                {osKey === "syslog" ? "Firewall / Syslog" : osKey}
+              </button>
+            ))}
+          </div>
           <p className="text-xs text-slate-300 leading-relaxed">
-            Run the autonomous Python agent directly inside your target Linux virtual machines (e.g. <span className="text-cyan-300 font-mono">Parrot OS</span>, <span className="text-cyan-300 font-mono">Metasploitable2</span>) or Kali host. The agent self-registers, exchanges cryptographic credentials, streams host telemetry, and monitors critical system paths.
+            Install the autonomous agent on employee laptops, production servers, or forward OPNsense / Suricata / Zeek logs to collect live processes, active connections, installed packages, auth logs, and SHA-256 FIM alerts.
           </p>
           <div className="flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-slate-800 font-mono text-xs text-cyan-300">
-            <span className="select-all">python3 agent/cyberlab_agent.py --server http://127.0.0.1:8000</span>
+            <span className="select-all truncate">{getDeployCommand()}</span>
             <button
               onClick={handleCopyCmd}
-              className="ml-3 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] flex items-center space-x-1.5 transition"
+              className="ml-3 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] flex items-center space-x-1.5 transition shrink-0"
             >
               {copiedCmd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedCmd ? "Copied" : "Copy"}</span>
@@ -208,7 +230,7 @@ export function EndpointFleet({ authToken }: EndpointFleetProps) {
           </div>
           <div className="text-[11px] text-slate-400 flex items-center space-x-2">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Telemetry streams every 10s. Monitored paths: <code className="text-slate-300">/etc/passwd</code>, <code className="text-slate-300">/etc/shadow</code>, <code className="text-slate-300">/etc/sudoers</code>, <code className="text-slate-300">/etc/hosts</code>.</span>
+            <span>Add <code className="text-slate-300">--enrollment-key &lt;KEY&gt;</code> when <code className="text-slate-300">AGENT_ENROLLMENT_KEY</code> is enforced in production.</span>
           </div>
         </div>
       )}

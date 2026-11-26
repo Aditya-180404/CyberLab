@@ -43,11 +43,13 @@ class CyberLabAgent:
         config_path: str = "./cyberlab_agent_config.json",
         enrollment_key: Optional[str] = None,
         ca_cert: Optional[str] = None,
+        hostname_override: Optional[str] = None,
     ):
         self.server_url = server_url.rstrip("/")
         self.config_path = config_path
         self.enrollment_key = enrollment_key or os.getenv("CYBERLAB_ENROLLMENT_KEY")
         self.ca_cert = ca_cert or os.getenv("CYBERLAB_CA_CERT")
+        self.hostname_override = hostname_override or os.getenv("CYBERLAB_HOSTNAME")
         self.ssl_context = ssl.create_default_context(cafile=self.ca_cert) if self.ca_cert else None
 
         self.agent_id: Optional[str] = None
@@ -116,7 +118,7 @@ class CyberLabAgent:
             return True
 
         print(f"[*] Registering new agent with {self.server_url}...")
-        hostname = socket.gethostname()
+        hostname = self.hostname_override or socket.gethostname()
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             s.connect(("8.8.8.8", 80))
@@ -357,9 +359,10 @@ class CyberLabAgent:
 
     def send_heartbeat(self) -> None:
         """Sends lightweight heartbeat and checks for server commands."""
+        disk_root = os.path.abspath(os.sep)
         cpu = psutil.cpu_percent() if HAS_PSUTIL else 0.0
         mem = psutil.virtual_memory().percent if HAS_PSUTIL else 0.0
-        disk = psutil.disk_usage("/").percent if HAS_PSUTIL else 0.0
+        disk = psutil.disk_usage(disk_root).percent if HAS_PSUTIL else 0.0
 
         try:
             res = self._http_request("/api/v1/agents/heartbeat", {
@@ -383,9 +386,10 @@ class CyberLabAgent:
 
     def send_telemetry(self) -> None:
         """Collects and batches security telemetry to server."""
+        disk_root = os.path.abspath(os.sep)
         cpu = psutil.cpu_percent() if HAS_PSUTIL else 0.0
         mem = psutil.virtual_memory().percent if HAS_PSUTIL else 0.0
-        disk = psutil.disk_usage("/").percent if HAS_PSUTIL else 0.0
+        disk = psutil.disk_usage(disk_root).percent if HAS_PSUTIL else 0.0
 
         self.check_fim_deltas()
         dispatched_fim = list(self.pending_fim_alerts)
@@ -443,6 +447,7 @@ def main():
     parser.add_argument("--config", default="./cyberlab_agent_config.json", help="Path to local config file")
     parser.add_argument("--enrollment-key", default=None, help="Pre-shared agent enrollment key")
     parser.add_argument("--ca-cert", default=None, help="Path to TLS CA certificate bundle")
+    parser.add_argument("--hostname", default=None, help="Override reported endpoint hostname")
     parser.add_argument("--run-once", action="store_true", help="Register, execute single telemetry batch, and exit")
     parser.add_argument("--interval", type=int, default=10, help="Heartbeat loop interval in seconds")
 
@@ -453,6 +458,7 @@ def main():
         config_path=args.config,
         enrollment_key=args.enrollment_key,
         ca_cert=args.ca_cert,
+        hostname_override=args.hostname,
     )
     if args.run_once:
         if agent.register():

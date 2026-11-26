@@ -4,7 +4,6 @@ import React from "react";
 import {
   ShieldAlert,
   Network,
-  Server,
   Radio,
   Layers,
   FileSearch,
@@ -28,7 +27,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { name: "SOC Dashboard", icon: ShieldAlert, status: "ACTIVE" },
   { name: "Network Studio", icon: Network, status: "ACTIVE" },
-  { name: "Virtual Machines", icon: Server, status: "ACTIVE" },
   { name: "Endpoint Fleet", icon: Radio, status: "ACTIVE" },
   { name: "Asset Inventory", icon: Layers, status: "ACTIVE" },
   { name: "SIEM & Correlation", icon: FileSearch, status: "ACTIVE" },
