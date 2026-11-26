@@ -145,3 +145,34 @@ def test_analyst_cannot_power_vm(client, analyst_token, tmp_path):
         headers={"Authorization": f"Bearer {analyst_token}"}
     )
     assert reg_res.status_code == 403
+
+
+def test_vm_list_auto_syncs_live_hypervisor_state(client, admin_token, use_mock_vm_adapter, tmp_path):
+    """Verifies GET /vms automatically synchronizes live RUNNING/STOPPED state from hypervisor."""
+    vmx_file = tmp_path / "Metasploitable-Live.vmx"
+    vmx_file.write_text('displayName = "Metasploitable-Live"\nmemsize = "512"\n')
+
+    reg_res = client.post(
+        "/api/v1/vms/register",
+        json={"config_path": str(vmx_file)},
+        headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert reg_res.status_code == 201
+    vm_id = reg_res.json()["id"]
+    assert reg_res.json()["power_state"] == "STOPPED"
+
+    # Simulate external VM start in VMware Workstation
+    use_mock_vm_adapter.running_vms.add(os.path.realpath(str(vmx_file)))
+
+    list_res = client.get("/api/v1/vms", headers={"Authorization": f"Bearer {admin_token}"})
+    assert list_res.status_code == 200
+    matched = [v for v in list_res.json() if v["id"] == vm_id][0]
+    assert matched["power_state"] == "RUNNING"
+
+    # Simulate external VM stop in VMware Workstation
+    use_mock_vm_adapter.running_vms.clear()
+
+    list_res_2 = client.get("/api/v1/vms", headers={"Authorization": f"Bearer {admin_token}"})
+    assert list_res_2.status_code == 200
+    matched_2 = [v for v in list_res_2.json() if v["id"] == vm_id][0]
+    assert matched_2["power_state"] == "STOPPED"

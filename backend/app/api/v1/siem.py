@@ -17,7 +17,9 @@ from app.schemas.siem import (
     SecurityEventCreate, SecurityEventResponse, SecurityAlertResponse,
     SecurityIncidentResponse, MitreMatrixSummary, SIEMKPIs, AttackSimulationRequest
 )
+from app.schemas.threat_intel import SyslogBatchRequest, NDRIngestRequest
 from app.siem.engine import siem_engine
+from app.siem.syslog_parser import parse_syslog_line, parse_ndr_event
 from app.core.dependencies import get_current_user, require_role
 
 router = APIRouter()
@@ -200,3 +202,33 @@ def simulate_attack(
     db.commit()
 
     return [_format_event(e) for e in events]
+
+
+@router.post("/siem/ingest/syslog", response_model=List[SecurityEventResponse], status_code=status.HTTP_201_CREATED)
+def ingest_syslog_batch(
+    payload: SyslogBatchRequest,
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SOC_MANAGER, UserRole.SOC_ANALYST, UserRole.NETWORK_ENGINEER])),
+    db: Session = Depends(get_db)
+):
+    """Ingests raw syslog lines (OPNsense filterlog, sshd, sudo, rsyslog) into the SIEM pipeline."""
+    org_id = current_user.organization_id or "default-org"
+    ingested = []
+    for line in payload.lines:
+        evt_create = parse_syslog_line(line, source_name=payload.source_name, fallback_ip=payload.source_ip)
+        ingested.append(siem_engine.ingest_event(db, evt_create, organization_id=org_id))
+    return [_format_event(e) for e in ingested]
+
+
+@router.post("/siem/ingest/ndr", response_model=List[SecurityEventResponse], status_code=status.HTTP_201_CREATED)
+def ingest_ndr_batch(
+    payload: NDRIngestRequest,
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SOC_MANAGER, UserRole.SOC_ANALYST, UserRole.NETWORK_ENGINEER])),
+    db: Session = Depends(get_db)
+):
+    """Ingests Suricata EVE JSON, Zeek flow JSON, or firewall NDR events into SIEM & Threat Intel correlation."""
+    org_id = current_user.organization_id or "default-org"
+    ingested = []
+    for raw_evt in payload.events:
+        evt_create = parse_ndr_event(payload.engine, raw_evt)
+        ingested.append(siem_engine.ingest_event(db, evt_create, organization_id=org_id))
+    return [_format_event(e) for e in ingested]

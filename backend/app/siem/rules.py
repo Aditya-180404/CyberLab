@@ -135,10 +135,64 @@ class ReconnaissanceRule(DetectionRuleDef):
         return False
 
 
+class SuricataIDSRule(DetectionRuleDef):
+    def __init__(self):
+        super().__init__(
+            rule_id="RULE_NDR_SURICATA_ALERT",
+            title="NDR / Network IDS Signature Alert",
+            description="Network intrusion detection signature triggered via Suricata EVE or firewall NDR stream.",
+            severity=EventSeverity.HIGH,
+            mitre_tactic="Command and Control",
+            mitre_technique_id="T1071",
+            mitre_technique_name="Application Layer Protocol",
+        )
+
+    def evaluate(self, event: SecurityEvent, recent_events: List[SecurityEvent]) -> bool:
+        if event.category == EventCategory.NETWORK_CONNECTION and event.action == "NDR_ALERT":
+            return True
+        return False
+
+
+class ThreatIntelMatchRule(DetectionRuleDef):
+    def __init__(self):
+        super().__init__(
+            rule_id="RULE_THREAT_INTEL_IOC_MATCH",
+            title="Threat Intelligence IOC Match Detected",
+            description="Traffic, socket, or log matched an active known-malicious Threat Intel IOC.",
+            severity=EventSeverity.CRITICAL,
+            mitre_tactic="Command and Control",
+            mitre_technique_id="T1071",
+            mitre_technique_name="Application Layer Protocol",
+        )
+
+    def evaluate(self, event: SecurityEvent, recent_events: List[SecurityEvent]) -> bool:
+        raw = (event.raw_data_json or "").lower()
+        return "threat_intel_ioc_match" in raw or "ioc_match" in event.message.lower()
+
+
+class HoneypotDeceptionRule(DetectionRuleDef):
+    def __init__(self):
+        super().__init__(
+            rule_id="RULE_DECEPTION_TRAP_TRIGGERED",
+            title="Deception Honeypot / Canary Trap Triggered",
+            description="Zero-false-positive detection: adversary touched a decoy credential, port, or canary file.",
+            severity=EventSeverity.CRITICAL,
+            mitre_tactic="Discovery",
+            mitre_technique_id="T1083",
+            mitre_technique_name="File and Directory Discovery",
+        )
+
+    def evaluate(self, event: SecurityEvent, recent_events: List[SecurityEvent]) -> bool:
+        return event.action == "DECEPTION_TRAP_TRIGGERED" or "deception_trap_triggered" in event.message.lower()
+
+
 ALL_RULES: List[DetectionRuleDef] = [
     BruteForceRule(),
     SudoPrivilegeEscalationRule(),
     CredentialDumpingRule(),
     ReverseShellRule(),
     ReconnaissanceRule(),
+    SuricataIDSRule(),
+    ThreatIntelMatchRule(),
+    HoneypotDeceptionRule(),
 ]

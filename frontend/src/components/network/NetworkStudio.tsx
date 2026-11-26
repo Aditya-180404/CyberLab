@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   ReactFlow,
   Controls,
@@ -17,66 +17,40 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import {
-  Plus,
   Play,
   Square,
   ShieldAlert,
   Server,
   Network,
   Terminal,
-  Save,
   CheckCircle2,
   AlertTriangle,
-  RotateCcw,
 } from "lucide-react";
 
 import { CustomDeviceNode } from "./CustomDeviceNode";
-import { createTopology, previewTopology, deployTopology, teardownTopology } from "../../lib/api";
+import {
+  createTopology,
+  previewTopology,
+  deployTopology,
+  teardownTopology,
+  fetchVMs,
+  fetchAgents,
+} from "../../lib/api";
+import { VirtualMachineItem, AgentItem } from "../../lib/types";
 
-const INITIAL_NODES: Node[] = [
-  {
-    id: "fw-1",
-    type: "deviceNode",
-    position: { x: 300, y: 50 },
-    data: { label: "Edge-Firewall", deviceType: "firewall", ipAddress: "192.168.1.1", status: "STOPPED" },
-  },
-  {
-    id: "sw-dmz",
-    type: "deviceNode",
-    position: { x: 150, y: 180 },
-    data: { label: "DMZ-Bridge", deviceType: "switch", vlanId: 100, status: "STOPPED" },
-  },
-  {
-    id: "sw-lan",
-    type: "deviceNode",
-    position: { x: 450, y: 180 },
-    data: { label: "Corp-Bridge", deviceType: "switch", vlanId: 200, status: "STOPPED" },
-  },
-  {
-    id: "srv-web",
-    type: "deviceNode",
-    position: { x: 100, y: 320 },
-    data: { label: "Web-Server-01", deviceType: "server", ipAddress: "192.168.100.10", status: "STOPPED" },
-  },
-  {
-    id: "ep-workstation",
-    type: "deviceNode",
-    position: { x: 480, y: 320 },
-    data: { label: "Analyst-WS", deviceType: "endpoint", ipAddress: "192.168.200.25", status: "STOPPED" },
-  },
-];
-
-const INITIAL_EDGES: Edge[] = [
-  { id: "e1-2", source: "fw-1", target: "sw-dmz", animated: true },
-  { id: "e1-3", source: "fw-1", target: "sw-lan", animated: true },
-  { id: "e2-4", source: "sw-dmz", target: "srv-web" },
-  { id: "e3-5", source: "sw-lan", target: "ep-workstation" },
-];
+function inferDeviceType(name: string): "router" | "switch" | "firewall" | "server" | "endpoint" {
+  const lower = name.toLowerCase();
+  if (/opensense|opnsense|pfsense|fw|firewall/.test(lower)) return "firewall";
+  if (/router|gateway/.test(lower)) return "router";
+  if (/metasploit|vulnhub|mrrobot|server|web|db/.test(lower)) return "server";
+  return "endpoint";
+}
 
 export function NetworkStudio({ authToken }: { authToken: string | null }) {
-  const [nodes, setNodes] = useState<Node[]>(INITIAL_NODES);
-  const [edges, setEdges] = useState<Edge[]>(INITIAL_EDGES);
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [liveCount, setLiveCount] = useState(0);
 
   const [topologyId, setTopologyId] = useState<string | null>(null);
   const [status, setStatus] = useState<"STOPPED" | "DEPLOYED" | "DEPLOYING">("STOPPED");
@@ -85,6 +59,130 @@ export function NetworkStudio({ authToken }: { authToken: string | null }) {
   const [message, setMessage] = useState<string | null>(null);
 
   const nodeTypes = useMemo(() => ({ deviceNode: CustomDeviceNode }), []);
+
+  const syncLiveSystems = useCallback(async () => {
+    if (!authToken) {
+      setLiveCount(0);
+      setNodes((prev) => prev.filter((n) => n.id.startsWith("manual-")));
+      setEdges((prev) => prev.filter((e) => e.id.startsWith("manual-")));
+      return;
+    }
+
+    try {
+      const [vms, agents]: [VirtualMachineItem[], AgentItem[]] = await Promise.all([
+        fetchVMs(authToken).catch(() => []),
+        fetchAgents(authToken).catch(() => []),
+      ]);
+
+      const runningVMs = vms.filter((v) => v.power_state === "RUNNING");
+      const activeAgents = agents.filter((a) => a.status === "ONLINE" || a.status === "ISOLATED");
+
+      const liveNodes: Node[] = [];
+      const liveEdges: Edge[] = [];
+      const createdSwitches = new Set<string>();
+
+      // Group running VMs by primary virtual network (vnet)
+      runningVMs.forEach((vm, idx) => {
+        const primaryAdapter = vm.network_adapters?.[0];
+        const vnet = primaryAdapter?.vnet || (primaryAdapter?.is_bridged ? "bridged" : "vmnet1");
+        const swId = `live-sw-${vnet}`;
+
+        if (!createdSwitches.has(swId)) {
+          createdSwitches.add(swId);
+          liveNodes.push({
+            id: swId,
+            type: "deviceNode",
+            position: { x: 280 + createdSwitches.size * 220 - 220, y: 80 },
+            data: {
+              label: vnet.toUpperCase(),
+              deviceType: "switch",
+              vlanId: vnet === "vmnet1" ? 101 : 1,
+              status: "RUNNING",
+            },
+          });
+        }
+
+        const vmNodeId = `live-vm-${vm.id}`;
+        const devType = inferDeviceType(vm.name);
+        liveNodes.push({
+          id: vmNodeId,
+          type: "deviceNode",
+          position: { x: 120 + (idx % 3) * 230, y: 240 + Math.floor(idx / 3) * 150 },
+          data: {
+            label: vm.name,
+            deviceType: devType,
+            ipAddress: primaryAdapter?.mac_address || vm.os_type,
+            status: "RUNNING",
+          },
+        });
+
+        liveEdges.push({
+          id: `live-edge-${vm.id}`,
+          source: swId,
+          target: vmNodeId,
+          animated: true,
+        });
+      });
+
+      // Add online/isolated EDR agents not already represented by a running VM
+      const vmNames = new Set(runningVMs.map((v) => v.name.toLowerCase()));
+      const extraAgents = activeAgents.filter((a) => !vmNames.has(a.hostname.toLowerCase()));
+      if (extraAgents.length > 0 && !createdSwitches.has("live-sw-lan")) {
+        createdSwitches.add("live-sw-lan");
+        liveNodes.push({
+          id: "live-sw-lan",
+          type: "deviceNode",
+          position: { x: 280 + createdSwitches.size * 220 - 220, y: 80 },
+          data: {
+            label: "ENDPOINT-FLEET",
+            deviceType: "switch",
+            vlanId: 10,
+            status: "RUNNING",
+          },
+        });
+      }
+
+      extraAgents.forEach((agent, idx) => {
+        const agNodeId = `live-agent-${agent.id}`;
+        liveNodes.push({
+          id: agNodeId,
+          type: "deviceNode",
+          position: { x: 120 + ((runningVMs.length + idx) % 3) * 230, y: 240 + Math.floor((runningVMs.length + idx) / 3) * 150 },
+          data: {
+            label: agent.hostname,
+            deviceType: "endpoint",
+            ipAddress: agent.ip_address,
+            status: agent.status === "ISOLATED" ? "ERROR" : "RUNNING",
+          },
+        });
+        liveEdges.push({
+          id: `live-edge-ag-${agent.id}`,
+          source: "live-sw-lan",
+          target: agNodeId,
+          animated: agent.status !== "ISOLATED",
+        });
+      });
+
+      setLiveCount(runningVMs.length + extraAgents.length);
+
+      setNodes((prev) => {
+        const manualNodes = prev.filter((n) => n.id.startsWith("manual-"));
+        return [...liveNodes, ...manualNodes];
+      });
+      setEdges((prev) => {
+        const manualEdges = prev.filter((e) => !e.id.startsWith("live-"));
+        return [...liveEdges, ...manualEdges];
+      });
+    } catch {
+      // Non-fatal during background sync
+    }
+  }, [authToken]);
+
+  useEffect(() => {
+    syncLiveSystems();
+    const interval = setInterval(syncLiveSystems, 5000);
+    return () => clearInterval(interval);
+  }, [syncLiveSystems]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -106,7 +204,7 @@ export function NetworkStudio({ authToken }: { authToken: string | null }) {
   }, []);
 
   const handleAddDevice = (type: "router" | "switch" | "firewall" | "server" | "endpoint") => {
-    const id = `${type}-${Date.now().toString().slice(-4)}`;
+    const id = `manual-${type}-${Date.now().toString().slice(-4)}`;
     const newNode: Node = {
       id,
       type: "deviceNode",
@@ -229,12 +327,12 @@ export function NetworkStudio({ authToken }: { authToken: string | null }) {
             </span>
             <span
               className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                status === "DEPLOYED"
+                liveCount > 0 || status === "DEPLOYED"
                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                   : "bg-slate-800 text-slate-400 border-slate-700"
               }`}
             >
-              {status}
+              {liveCount > 0 ? `LIVE: ${liveCount} ACTIVE` : status === "DEPLOYED" ? "DEPLOYED" : "IDLE (0 ACTIVE)"}
             </span>
           </div>
 
@@ -271,7 +369,22 @@ export function NetworkStudio({ authToken }: { authToken: string | null }) {
         )}
 
         {/* Interactive React Flow Canvas */}
-        <div className="flex-1 w-full h-full">
+        <div className="flex-1 w-full h-full relative">
+          {nodes.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <div className="text-center max-w-md px-6 py-5 rounded-xl border border-slate-800/80 bg-slate-950/80 backdrop-blur">
+                <Network className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                <div className="text-xs font-mono font-semibold text-slate-300">
+                  No Active Systems Detected
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                  {authToken
+                    ? "Start a VM in VMware Workstation or connect a Linux endpoint agent. Running systems will appear here automatically."
+                    : "Sign in on the SOC Dashboard to monitor active VMs and endpoint agents."}
+                </p>
+              </div>
+            </div>
+          )}
           <ReactFlow
             nodes={nodes}
             edges={edges}

@@ -43,3 +43,11 @@ class User(Base):
     # Relationships
     organization = relationship("Organization", back_populates="users")
     audit_logs = relationship("AuditLog", back_populates="user")
+
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    jti = Column(String(64), primary_key=True, index=True)
+    username = Column(String(50), nullable=True)
+    revoked_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)

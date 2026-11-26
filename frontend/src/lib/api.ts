@@ -38,9 +38,11 @@ import {
   SiteStatsItem,
   ExecutiveReportItem,
   ComplianceReportItem,
+  ThreatIOCItem,
+  DeceptionTrapItem,
 } from "./types";
 
-const BACKEND_BASE = "http://127.0.0.1:8000/api/v1";
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1";
 
 export async function fetchSystemHealth(): Promise<HealthResponse> {
   const res = await fetch(`${BACKEND_BASE}/health`, { cache: "no-store" });
@@ -708,6 +710,76 @@ export async function fetchComplianceReport(token: string, standard?: string): P
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to generate compliance report");
+  return await res.json();
+}
+
+// Threat Intelligence, Deception & Syslog/NDR API
+export async function fetchThreatIOCs(token: string): Promise<ThreatIOCItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/threat-intel/iocs`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch Threat IOCs");
+  return await res.json();
+}
+
+export async function createThreatIOC(
+  token: string,
+  payload: { ioc_type: string; value: string; threat_actor: string; severity: string; source: string; confidence: number }
+): Promise<ThreatIOCItem> {
+  const res = await fetch(`${BACKEND_BASE}/threat-intel/iocs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to add IOC");
+  }
+  return await res.json();
+}
+
+export async function deleteThreatIOC(token: string, iocId: string): Promise<void> {
+  const res = await fetch(`${BACKEND_BASE}/threat-intel/iocs/${iocId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to delete IOC");
+}
+
+export async function fetchDeceptionTraps(token: string): Promise<DeceptionTrapItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/threat-intel/traps`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch Deception Traps");
+  return await res.json();
+}
+
+export async function triggerDeceptionTrap(token: string, trapId: string): Promise<DeceptionTrapItem> {
+  const res = await fetch(`${BACKEND_BASE}/threat-intel/traps/${trapId}/trigger`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to trigger trap");
+  return await res.json();
+}
+
+export async function ingestSyslogLines(token: string, sourceName: string, lines: string[]): Promise<SecurityEventItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/siem/ingest/syslog`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ source_name: sourceName, lines }),
+  });
+  if (!res.ok) throw new Error("Failed to ingest syslog");
+  return await res.json();
+}
+
+export async function ingestNDREvents(token: string, engine: "suricata" | "zeek" | "firewall", events: Record<string, any>[]): Promise<SecurityEventItem[]> {
+  const res = await fetch(`${BACKEND_BASE}/siem/ingest/ndr`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ engine, events }),
+  });
+  if (!res.ok) throw new Error("Failed to ingest NDR events");
   return await res.json();
 }
 

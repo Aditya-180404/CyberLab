@@ -1,6 +1,7 @@
 """
 CyberLab Cryptographic Security Utilities
 """
+import uuid
 import bcrypt
 import jwt
 from datetime import datetime, timedelta, timezone
@@ -35,6 +36,7 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     to_encode.update({
         "exp": expire,
         "iat": now,
+        "jti": str(uuid.uuid4()),
         "iss": "cyberlab-auth",
         "aud": "cyberlab-api"
     })

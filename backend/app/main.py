@@ -25,9 +25,14 @@ logger = logging.getLogger("cyberlab.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initializes database schema and baseline data during startup."""
-    logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}...")
-    
+    """Initializes database schema, validates security config, and seeds baseline data."""
+    logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} ({settings.ENVIRONMENT})...")
+
+    if settings.ENVIRONMENT.lower() == "production" and not settings.SECRET_KEY_FROM_ENV:
+        raise RuntimeError(
+            "FATAL SECURITY ERROR: SECRET_KEY environment variable MUST be set in production mode."
+        )
+
     # 1. Ensure database tables exist
     Base.metadata.create_all(bind=engine)
     logger.info("Database schema initialized.")
@@ -42,8 +47,16 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
+    # 3. Optional non-privileged UDP Syslog/NDR collector
+    syslog_transport = None
+    if settings.SYSLOG_ENABLED:
+        from app.siem.syslog_listener import start_syslog_listener
+        syslog_transport = await start_syslog_listener(settings.SYSLOG_PORT)
+
     yield
 
+    if syslog_transport:
+        syslog_transport.close()
     logger.info(f"Shutting down {settings.PROJECT_NAME}...")
 
 

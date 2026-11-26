@@ -1,0 +1,24 @@
+{
+  "agent_id": "cl-agent-be256396",
+  "agent_token": "cla_fjm9eoI0Jbz7eMUdJ-MrqypCbOE1FMHRV48y201QIuw",
+  "policy": {
+    "telemetry_interval_sec": 15,
+    "fim_monitored_paths": [
+      "/etc/passwd",
+      "/etc/shadow",
+      "/etc/sudoers",
+      "/etc/ssh/sshd_config",
+      "/etc/hosts"
+    ],
+    "monitor_processes": true,
+    "monitor_sockets": true,
+    "monitor_auth_logs": true
+  },
+  "fim_baselines": {
+    "/etc/passwd": "6e59e92d726d307e4d500c91fe4bb5bb56b87f069f824fdea9a91666cf9cabca",
+    "/etc/ssh/sshd_config": "aecc8e1d4f9ac0a44028f323e27ebdbbb77d2ce208660c214c5b28b774ccd0f0",
+    "/etc/hosts": "e21c14212b85acdd59eaddcd9a7455eaf0c75858b81b481d988bad49018372bf"
+  },
+  "auth_log_offsets": {},
+  "is_isolated": false
+}

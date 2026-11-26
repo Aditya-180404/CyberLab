@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.models.user import User
-from app.api.v1.auth import get_current_user
+from app.models.user import User, UserRole
+from app.core.dependencies import get_current_user, require_role
 from app.enterprise.site_service import SiteService
 from app.schemas.site import SiteCreate, SiteUpdate, SiteResponse, SiteStatsResponse
 
@@ -39,7 +39,7 @@ def get_sites_with_stats(
 def create_site(
     site_in: SiteCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SOC_MANAGER]))
 ):
     """Register a new remote site in the enterprise organization."""
     service = SiteService(db, current_user.organization_id)
@@ -51,7 +51,7 @@ def update_site(
     site_id: str,
     site_in: SiteUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SOC_MANAGER]))
 ):
     """Update metadata and status for a site."""
     try:
@@ -65,7 +65,7 @@ def update_site(
 def delete_site(
     site_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SOC_MANAGER]))
 ):
     """Delete a site and unlink associated assets."""
     try:

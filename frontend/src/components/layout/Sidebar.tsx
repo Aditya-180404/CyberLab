@@ -16,6 +16,7 @@ import {
   Cpu,
   AlertTriangle,
   Globe,
+  Radar,
 } from "lucide-react";
 
 interface NavItem {
@@ -31,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: "Endpoint Fleet", icon: Radio, status: "ACTIVE" },
   { name: "Asset Inventory", icon: Layers, status: "ACTIVE" },
   { name: "SIEM & Correlation", icon: FileSearch, status: "ACTIVE" },
+  { name: "Threat Intel & NDR", icon: Radar, status: "ACTIVE" },
   { name: "Incident Response", icon: Crosshair, status: "ACTIVE" },
   { name: "Digital Twin", icon: GitBranch, status: "ACTIVE" },
   { name: "Purple-Team Studio", icon: ShieldCheck, status: "ACTIVE" },

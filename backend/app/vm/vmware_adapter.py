@@ -5,7 +5,7 @@ Interacts with /usr/bin/vmrun to control VM power states and query running inven
 import subprocess
 import os
 import logging
-from typing import List
+from typing import List, Optional
 from app.vm.adapter import HypervisorAdapter
 
 logger = logging.getLogger("cyberlab.vm.vmware")
@@ -20,11 +20,11 @@ class VMwareWorkstationAdapter(HypervisorAdapter):
         logger.info(f"Executing vmrun: {' '.join(cmd)}")
         return subprocess.run(cmd, capture_output=True, text=True, check=True)
 
-    def list_running_vms(self) -> List[str]:
-        """Returns normalized absolute paths of all currently running VMs."""
+    def try_list_running_vms(self) -> Optional[List[str]]:
+        """Returns normalized paths of currently running VMs, or None if vmrun is unavailable/failed."""
         if not os.path.isfile(self.vmrun_path):
             logger.warning(f"vmrun binary not found at {self.vmrun_path}")
-            return []
+            return None
 
         try:
             res = self._execute(["list"])
@@ -32,12 +32,16 @@ class VMwareWorkstationAdapter(HypervisorAdapter):
             running = []
             for line in lines[1:]:  # First line is 'Total running VMs: N'
                 line = line.strip()
-                if line and os.path.exists(line):
-                    running.append(os.path.realpath(line))
+                if line:
+                    running.append(os.path.realpath(line) if os.path.exists(line) else line)
             return running
         except Exception as e:
             logger.warning(f"vmrun list failed (may lack X11 or direct socket): {e}")
-            return []
+            return None
+
+    def list_running_vms(self) -> List[str]:
+        """Returns normalized absolute paths of all currently running VMs."""
+        return self.try_list_running_vms() or []
 
     def start_vm(self, config_path: str) -> bool:
         try:

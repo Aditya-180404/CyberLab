@@ -486,16 +486,18 @@ export function EndpointFleet({ authToken }: EndpointFleetProps) {
                       <span>Active Listening Sockets / Network Ports</span>
                     </div>
                     <div className="rounded-lg border border-slate-800 bg-slate-950 overflow-hidden text-xs font-mono">
-                      <div className="grid grid-cols-3 p-2 border-b border-slate-800 text-[11px] text-slate-400 uppercase">
+                      <div className="grid grid-cols-4 p-2 border-b border-slate-800 text-[11px] text-slate-400 uppercase">
                         <div>Protocol</div>
                         <div>Local Port</div>
+                        <div>Remote Endpoint</div>
                         <div>State</div>
                       </div>
                       <div className="divide-y divide-slate-800/60 max-h-40 overflow-y-auto">
                         {selectedAgent.latest_telemetry.network_connections.map((conn, idx) => (
-                          <div key={idx} className="grid grid-cols-3 p-2 text-slate-300">
+                          <div key={idx} className="grid grid-cols-4 p-2 text-slate-300">
                             <div className="uppercase text-cyan-400">{conn.protocol}</div>
                             <div>{conn.local_port}</div>
+                            <div className="truncate text-slate-400">{(conn as any).remote || "-"}</div>
                             <div className="text-emerald-400 text-[11px]">{conn.state || "LISTEN"}</div>
                           </div>
                         ))}

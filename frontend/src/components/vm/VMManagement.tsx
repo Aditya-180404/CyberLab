@@ -3,67 +3,56 @@
 import React, { useState, useEffect } from "react";
 import {
   Server,
-  Play,
-  Square,
-  RotateCcw,
   Search,
-  ShieldAlert,
   ShieldCheck,
-  Cpu,
-  Layers,
   Network,
   AlertTriangle,
-  HardDrive,
 } from "lucide-react";
-import { fetchVMs, discoverVMs, powerVM } from "../../lib/api";
+import { fetchVMs, discoverVMs } from "../../lib/api";
 import { VirtualMachineItem } from "../../lib/types";
 
 export function VMManagement({ authToken }: { authToken: string | null }) {
   const [vms, setVms] = useState<VirtualMachineItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const loadVMs = async () => {
-    setLoading(true);
+  const loadVMs = async (silent = false) => {
+    if (!authToken) return;
+    if (!silent) setLoading(true);
     try {
-      const data = await fetchVMs(authToken || "demo-token");
+      const data = await fetchVMs(authToken);
       setVms(data);
     } catch (err: any) {
-      // Non-fatal if unauthenticated or empty
+      // Non-fatal during background poll
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!authToken) return;
     loadVMs();
+    const interval = setInterval(() => {
+      loadVMs(true);
+    }, 5000);
+    return () => clearInterval(interval);
   }, [authToken]);
 
   const handleDiscover = async () => {
+    if (!authToken) {
+      setMessage("Please sign in on the SOC Dashboard first to discover VMs.");
+      return;
+    }
     setLoading(true);
     setMessage("Scanning VMware Workstation inventory and host drives for .vmx files...");
     try {
-      const res = await discoverVMs(authToken || "demo-token");
+      const res = await discoverVMs(authToken);
       setVms(res.registered_vms);
       setMessage(`Discovery complete! Successfully inventoried ${res.discovered_count} virtual machines.`);
     } catch (err: any) {
       setMessage(`Discovery failed: ${err.message}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handlePowerAction = async (vmId: string, action: "start" | "stop" | "reset") => {
-    setActionLoading(vmId);
-    try {
-      const updated = await powerVM(authToken || "demo-token", vmId, action, "soft");
-      setVms((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
-      setMessage(`Power action '${action}' dispatched successfully to ${updated.name}.`);
-    } catch (err: any) {
-      setMessage(`Power operation failed: ${err.message}`);
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -83,9 +72,14 @@ export function VMManagement({ authToken }: { authToken: string | null }) {
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
               HYPERVISOR ACTIVE
             </span>
+            {authToken && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                AUTO-SYNC 5s
+              </span>
+            )}
           </div>
           <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-            Manage real virtual machines (Parrot OS, Metasploitable 2, Stapler), inspect VMware network adapter bindings, enforce host-only isolation, and control VM power states.
+            Monitor live virtual machines (Parrot OS, Metasploitable 2, Opensence, mrRobot), inspect VMware network adapter bindings, and verify host-only isolation.
           </p>
         </div>
 
@@ -241,39 +235,6 @@ export function VMManagement({ authToken }: { authToken: string | null }) {
                       <span>Isolated Host-Only (vmnet1) — Protected from host Wi-Fi/LAN</span>
                     </div>
                   )}
-
-                  {/* Power Control Buttons */}
-                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-end space-x-2">
-                    {!isRunning ? (
-                      <button
-                        onClick={() => handlePowerAction(vm.id, "start")}
-                        disabled={actionLoading === vm.id}
-                        className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition disabled:opacity-50"
-                      >
-                        <Play className="w-3.5 h-3.5" />
-                        <span>Power On</span>
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handlePowerAction(vm.id, "reset")}
-                          disabled={actionLoading === vm.id}
-                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition disabled:opacity-50"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Reset</span>
-                        </button>
-                        <button
-                          onClick={() => handlePowerAction(vm.id, "stop")}
-                          disabled={actionLoading === vm.id}
-                          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition disabled:opacity-50"
-                        >
-                          <Square className="w-3.5 h-3.5" />
-                          <span>Shut Down</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
                 </div>
               );
             })}

@@ -2,8 +2,16 @@
 """
 CyberLab Autonomous Distributed Linux Security Agent
 Lightweight endpoint detection and response (EDR) agent for managed Linux systems.
+Supports:
+- Enrollment key authentication & custom TLS CA verification
+- Process, network socket, and installed package inventory (dpkg/rpm)
+- SHA-256 File Integrity Monitoring (FIM) with offline delta buffering
+- Auth log tailing (/var/log/auth.log, /var/log/secure)
+- Real nftables endpoint isolation (when running with CAP_NET_ADMIN / root)
 """
 import os
+import re
+import ssl
 import sys
 import json
 import time
@@ -11,37 +19,53 @@ import socket
 import hashlib
 import platform
 import argparse
+import subprocess
 import urllib.request
 import urllib.error
 from typing import Dict, Any, List, Optional
 
-# Optional psutil integration with graceful standard-library fallback
 try:
     import psutil
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
 
-VERSION = "0.4.0"
+VERSION = "1.0.0"
+
+_AUTH_FAIL_RE = re.compile(r"(?:Failed password|Invalid user|authentication failure).*?from\s+((?:\d{1,3}\.){3}\d{1,3})", re.IGNORECASE)
+_SUDO_RE = re.compile(r"sudo:.*?(?:NOT in sudoers|authentication failure|COMMAND=.*)", re.IGNORECASE)
 
 
 class CyberLabAgent:
-    def __init__(self, server_url: str = "http://127.0.0.1:8000", config_path: str = "./cyberlab_agent_config.json"):
+    def __init__(
+        self,
+        server_url: str = "http://127.0.0.1:8000",
+        config_path: str = "./cyberlab_agent_config.json",
+        enrollment_key: Optional[str] = None,
+        ca_cert: Optional[str] = None,
+    ):
         self.server_url = server_url.rstrip("/")
         self.config_path = config_path
+        self.enrollment_key = enrollment_key or os.getenv("CYBERLAB_ENROLLMENT_KEY")
+        self.ca_cert = ca_cert or os.getenv("CYBERLAB_CA_CERT")
+        self.ssl_context = ssl.create_default_context(cafile=self.ca_cert) if self.ca_cert else None
+
         self.agent_id: Optional[str] = None
         self.agent_token: Optional[str] = None
         self.policy: Dict[str, Any] = {
             "telemetry_interval_sec": 15,
-            "fim_monitored_paths": ["/etc/passwd", "/etc/hosts"],
+            "fim_monitored_paths": ["/etc/passwd", "/etc/hosts", "/etc/cyberlab_canary.key"],
         }
         self.fim_baselines: Dict[str, str] = {}
         self.pending_fim_alerts: List[Dict[str, Any]] = []
+        self.auth_log_offsets: Dict[str, int] = {}
         self.is_isolated = False
+        self._cached_packages: List[Dict[str, str]] = []
+        self._last_pkg_scan: float = 0.0
         self.load_local_config()
 
     def load_local_config(self) -> None:
-        """Loads cached agent identity and policy from disk."""
+        """Loads cached agent identity, policy, and offsets from disk."""
         if os.path.exists(self.config_path):
             try:
                 with open(self.config_path, "r", encoding="utf-8") as f:
@@ -50,6 +74,7 @@ class CyberLabAgent:
                     self.agent_token = data.get("agent_token")
                     self.policy = data.get("policy", self.policy)
                     self.fim_baselines = data.get("fim_baselines", {})
+                    self.auth_log_offsets = data.get("auth_log_offsets", {})
                     self.is_isolated = data.get("is_isolated", False)
             except Exception as e:
                 print(f"[!] Warning: Could not read local config: {e}")
@@ -63,23 +88,26 @@ class CyberLabAgent:
                     "agent_token": self.agent_token,
                     "policy": self.policy,
                     "fim_baselines": self.fim_baselines,
-                    "is_isolated": self.is_isolated
+                    "auth_log_offsets": self.auth_log_offsets,
+                    "is_isolated": self.is_isolated,
                 }, f, indent=2)
         except Exception as e:
             print(f"[!] Warning: Could not save local config: {e}")
 
     def _http_request(self, endpoint: str, data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Performs outbound HTTP/HTTPS request with authentication headers."""
+        """Performs outbound HTTP/HTTPS request with authentication and optional enrollment headers."""
         url = f"{self.server_url}{endpoint}"
         headers = {"Content-Type": "application/json"}
         if self.agent_token and self.agent_id:
             headers["Authorization"] = f"Bearer {self.agent_token}"
             headers["X-CyberLab-Agent-ID"] = self.agent_id
+        if self.enrollment_key and endpoint == "/api/v1/agents/register":
+            headers["X-CyberLab-Enrollment-Key"] = self.enrollment_key
 
         body = json.dumps(data).encode("utf-8") if data is not None else None
         req = urllib.request.Request(url, data=body, headers=headers)
 
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=10, context=self.ssl_context) as resp:
             return json.loads(resp.read().decode())
 
     def register(self) -> bool:
@@ -106,8 +134,8 @@ class CyberLabAgent:
             "agent_version": VERSION,
             "hardware_specs": {
                 "cpu_cores": os.cpu_count() or 1,
-                "architecture": platform.machine()
-            }
+                "architecture": platform.machine(),
+            },
         }
 
         try:
@@ -130,8 +158,7 @@ class CyberLabAgent:
             if os.path.isfile(p):
                 try:
                     with open(p, "rb") as f:
-                        h = hashlib.sha256(f.read()).hexdigest()
-                        self.fim_baselines[p] = h
+                        self.fim_baselines[p] = hashlib.sha256(f.read()).hexdigest()
                 except Exception as e:
                     print(f"[!] FIM access error on {p}: {e}")
         self.save_local_config()
@@ -154,9 +181,9 @@ class CyberLabAgent:
                             "file_path": p,
                             "old_hash": old_hash,
                             "new_hash": current_hash,
-                            "severity": "HIGH",
+                            "severity": "CRITICAL" if "canary" in p or p in ("/etc/shadow", "/etc/sudoers") else "HIGH",
                             "message": f"SHA-256 hash changed on {p}",
-                            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                         })
                         self.fim_baselines[p] = current_hash
                     elif not old_hash:
@@ -168,6 +195,99 @@ class CyberLabAgent:
             self.save_local_config()
         return alerts
 
+    def collect_auth_events(self) -> List[Dict[str, Any]]:
+        """Tails readable Linux auth logs for SSH failures and sudo/privilege events."""
+        events: List[Dict[str, Any]] = []
+        for log_path in ("/var/log/auth.log", "/var/log/secure"):
+            if not os.path.isfile(log_path):
+                continue
+            try:
+                file_size = os.path.getsize(log_path)
+                offset = self.auth_log_offsets.get(log_path)
+                if offset is None or offset > file_size:
+                    # Start tailing from current EOF on first run or log rotation
+                    self.auth_log_offsets[log_path] = file_size
+                    continue
+                if offset == file_size:
+                    continue
+
+                with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                    f.seek(offset)
+                    new_lines = f.readlines()[-100:]
+                    self.auth_log_offsets[log_path] = f.tell()
+
+                for line in new_lines:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    m_ssh = _AUTH_FAIL_RE.search(line)
+                    if m_ssh:
+                        events.append({
+                            "category": "AUTHENTICATION",
+                            "action": "FAILURE",
+                            "severity": "MEDIUM",
+                            "source_ip": m_ssh.group(1),
+                            "message": line,
+                            "mitre_tactic": "Credential Access",
+                            "mitre_technique_id": "T1110",
+                        })
+                    elif _SUDO_RE.search(line):
+                        is_fail = "not in sudoers" in line.lower() or "failure" in line.lower()
+                        events.append({
+                            "category": "AUTHENTICATION",
+                            "action": "FAILURE" if is_fail else "EXECUTED",
+                            "severity": "HIGH" if is_fail else "LOW",
+                            "message": line,
+                            "mitre_tactic": "Privilege Escalation",
+                            "mitre_technique_id": "T1548.003",
+                        })
+            except PermissionError:
+                pass
+            except Exception:
+                pass
+        if events:
+            self.save_local_config()
+        return events[:50]
+
+    def collect_packages(self) -> List[Dict[str, str]]:
+        """Collects installed software package names and versions for CVE matching (cached 5m)."""
+        now = time.time()
+        if self._cached_packages and (now - self._last_pkg_scan) < 300:
+            return self._cached_packages
+
+        pkgs: List[Dict[str, str]] = []
+        try:
+            res = subprocess.run(
+                ["dpkg-query", "-W", "-f=${Package}\t${Version}\n"],
+                capture_output=True, text=True, timeout=5
+            )
+            if res.returncode == 0:
+                for line in res.stdout.splitlines():
+                    if "\t" in line:
+                        name, ver = line.split("\t", 1)
+                        pkgs.append({"package": name.strip(), "version": ver.strip()})
+        except Exception:
+            try:
+                res = subprocess.run(
+                    ["rpm", "-qa", "--qf", "%{NAME}\t%{VERSION}-%{RELEASE}\n"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if res.returncode == 0:
+                    for line in res.stdout.splitlines():
+                        if "\t" in line:
+                            name, ver = line.split("\t", 1)
+                            pkgs.append({"package": name.strip(), "version": ver.strip()})
+            except Exception:
+                pass
+
+        # Prioritize security/network services if large package set
+        priority = ("openssl", "openssh", "apache2", "nginx", "vsftpd", "samba", "sudo", "bash", "curl", "python3", "postgresql")
+        prioritized = [p for p in pkgs if any(k in p["package"].lower() for k in priority)]
+        others = [p for p in pkgs if p not in prioritized]
+        self._cached_packages = (prioritized + others)[:120]
+        self._last_pkg_scan = now
+        return self._cached_packages
+
     def collect_processes(self) -> List[Dict[str, Any]]:
         """Collects process snapshot."""
         procs = []
@@ -178,7 +298,7 @@ class CyberLabAgent:
                         "pid": p.info["pid"],
                         "ppid": p.info["ppid"],
                         "name": p.info["name"],
-                        "username": p.info["username"]
+                        "username": p.info["username"],
                     })
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
@@ -199,39 +319,53 @@ class CyberLabAgent:
                         "local_port": c.laddr.port if c.laddr else 0,
                         "local": laddr,
                         "remote": raddr,
-                        "state": c.status or "LISTEN"
+                        "state": c.status or "LISTEN",
                     })
             except Exception:
                 pass
         return sockets[:30]
 
     def apply_isolation(self) -> None:
-        """Applies local network isolation restricting non-CyberLab traffic."""
-        print("[!] ISOLATION ORDER RECEIVED. Locking down network traffic...")
+        """Applies local nftables isolation restricting non-CyberLab traffic when privileged."""
+        print("[!] ISOLATION ORDER RECEIVED. Applying host containment policy...")
+        try:
+            from urllib.parse import urlparse
+            host = urlparse(self.server_url).hostname or "127.0.0.1"
+            subprocess.run(["nft", "add", "table", "inet", "cyberlab_isolation"], check=True, capture_output=True)
+            subprocess.run([
+                "nft", "add", "chain", "inet", "cyberlab_isolation", "output",
+                "{ type filter hook output priority 0; policy drop; }"
+            ], check=True, capture_output=True)
+            subprocess.run(["nft", "add", "rule", "inet", "cyberlab_isolation", "output", "oif", "lo", "accept"], check=True, capture_output=True)
+            subprocess.run(["nft", "add", "rule", "inet", "cyberlab_isolation", "output", "ip", "daddr", host, "accept"], check=True, capture_output=True)
+            print("[+] Kernel nftables isolation chain active (server management link preserved).")
+        except Exception as e:
+            print(f"[!] Logical isolation state set (kernel nftables requires root/CAP_NET_ADMIN: {e})")
         self.is_isolated = True
         self.save_local_config()
 
     def remove_isolation(self) -> None:
-        """Restores normal network traffic policy."""
+        """Removes nftables isolation table and restores normal network traffic."""
         print("[*] RESTORATION ORDER RECEIVED. Restoring network traffic...")
+        try:
+            subprocess.run(["nft", "delete", "table", "inet", "cyberlab_isolation"], check=True, capture_output=True)
+            print("[+] Kernel nftables isolation table removed.")
+        except Exception:
+            pass
         self.is_isolated = False
         self.save_local_config()
 
     def send_heartbeat(self) -> None:
         """Sends lightweight heartbeat and checks for server commands."""
-        cpu = 0.0
-        mem = 0.0
-        disk = 0.0
-        if HAS_PSUTIL:
-            cpu = psutil.cpu_percent()
-            mem = psutil.virtual_memory().percent
-            disk = psutil.disk_usage("/").percent
+        cpu = psutil.cpu_percent() if HAS_PSUTIL else 0.0
+        mem = psutil.virtual_memory().percent if HAS_PSUTIL else 0.0
+        disk = psutil.disk_usage("/").percent if HAS_PSUTIL else 0.0
 
         try:
             res = self._http_request("/api/v1/agents/heartbeat", {
                 "cpu_pct": cpu,
                 "memory_pct": mem,
-                "disk_pct": disk
+                "disk_pct": disk,
             })
 
             commands = res.get("pending_commands", [])
@@ -253,10 +387,12 @@ class CyberLabAgent:
         mem = psutil.virtual_memory().percent if HAS_PSUTIL else 0.0
         disk = psutil.disk_usage("/").percent if HAS_PSUTIL else 0.0
 
-        # Check for any new FIM deltas and drain pending buffer
         self.check_fim_deltas()
         dispatched_fim = list(self.pending_fim_alerts)
         self.pending_fim_alerts.clear()
+
+        auth_evts = self.collect_auth_events() if self.policy.get("monitor_auth_logs", True) else []
+        pkgs = self.collect_packages()
 
         batch = {
             "cpu_pct": cpu,
@@ -265,13 +401,22 @@ class CyberLabAgent:
             "processes": self.collect_processes(),
             "network_connections": self.collect_sockets(),
             "fim_alerts": dispatched_fim,
-            "auth_events": []
+            "auth_events": auth_evts,
+            "installed_packages": pkgs,
         }
 
         try:
             self._http_request("/api/v1/agents/telemetry", batch)
-            print(f"[*] Telemetry synchronized: {len(batch['processes'])} processes, {len(batch['network_connections'])} sockets, {len(batch['fim_alerts'])} FIM alerts.")
+            print(
+                f"[*] Telemetry synced: {len(batch['processes'])} procs, "
+                f"{len(batch['network_connections'])} sockets, "
+                f"{len(auth_evts)} auth, {len(pkgs)} pkgs, {len(dispatched_fim)} FIM alerts."
+            )
         except Exception as e:
+            # Re-queue FIM alerts for offline survivability
+            if dispatched_fim:
+                self.pending_fim_alerts.extend(dispatched_fim)
+                self.save_local_config()
             print(f"[-] Telemetry transmission failed: {e}")
 
     def run_daemon(self, interval: int = 10) -> None:
@@ -279,13 +424,12 @@ class CyberLabAgent:
         if not self.register():
             return
 
-        print(f"[+] CyberLab Agent daemon started. Monitoring host...")
+        print("[+] CyberLab Agent daemon started. Monitoring host...")
         cycle = 0
         try:
             while True:
                 self.send_heartbeat()
                 cycle += 1
-                # Send full telemetry batch every 2 cycles (20s)
                 if cycle % 2 == 0:
                     self.send_telemetry()
                 time.sleep(interval)
@@ -297,12 +441,19 @@ def main():
     parser = argparse.ArgumentParser(description="CyberLab Distributed Linux Agent")
     parser.add_argument("--server", default="http://127.0.0.1:8000", help="CyberLab Central Server URL")
     parser.add_argument("--config", default="./cyberlab_agent_config.json", help="Path to local config file")
+    parser.add_argument("--enrollment-key", default=None, help="Pre-shared agent enrollment key")
+    parser.add_argument("--ca-cert", default=None, help="Path to TLS CA certificate bundle")
     parser.add_argument("--run-once", action="store_true", help="Register, execute single telemetry batch, and exit")
     parser.add_argument("--interval", type=int, default=10, help="Heartbeat loop interval in seconds")
 
     args = parser.parse_args()
 
-    agent = CyberLabAgent(server_url=args.server, config_path=args.config)
+    agent = CyberLabAgent(
+        server_url=args.server,
+        config_path=args.config,
+        enrollment_key=args.enrollment_key,
+        ca_cert=args.ca_cert,
+    )
     if args.run_once:
         if agent.register():
             agent.send_heartbeat()

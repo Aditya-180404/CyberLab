@@ -17,6 +17,7 @@ from app.api.v1.purple_team import router as purple_team_router
 from app.api.v1.vulnerability import router as vulnerability_router
 from app.api.v1.sites import router as sites_router
 from app.api.v1.reports import router as reports_router
+from app.api.v1.threat_intel import router as threat_intel_router
 
 api_router = APIRouter()
 
@@ -35,6 +36,7 @@ api_router.include_router(purple_team_router, tags=["Purple-Team & Attack Simula
 api_router.include_router(vulnerability_router, tags=["Vulnerability Management & CVEs"])
 api_router.include_router(sites_router, tags=["Multi-Site Enterprise Fleet"])
 api_router.include_router(reports_router, tags=["Security & Compliance Reports"])
+api_router.include_router(threat_intel_router, tags=["Threat Intelligence & Deception"])
 
 
 

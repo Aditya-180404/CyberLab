@@ -12,6 +12,7 @@ from app.models.asset import Asset, AssetType, AssetCriticality, AssetStatus
 from app.models.vm import VirtualMachine, PowerState
 from app.models.agent import Agent, AgentStatus, AgentTelemetry
 from app.models.device import NetworkDevice
+from app.models.organization import Organization
 
 logger = logging.getLogger("cyberlab.inventory")
 
@@ -234,8 +235,10 @@ class AssetManager:
                 sec_tags.append("SECURITY_GATEWAY")
 
             if not asset:
+                default_org = db.query(Organization).first()
+                sim_org_id = (dev.topology.organization_id if getattr(dev, "topology", None) else None) or (default_org.id if default_org else "default-org")
                 asset = Asset(
-                    organization_id="default-org",
+                    organization_id=sim_org_id,
                     name=dev.name,
                     asset_type=AssetType.SIMULATED_DEVICE,
                     ip_addresses_json=json.dumps(ips),

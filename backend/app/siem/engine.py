@@ -64,6 +64,19 @@ class SIEMEngine:
         organization_id: str = "default-org"
     ) -> SecurityEvent:
         """Normalizes and persists an event, then evaluates detection rules and correlations."""
+        raw_payload = dict(payload.raw_data or {})
+
+        # Correlate against active Threat Intelligence IOCs (non-fatal if no org exists)
+        try:
+            from app.threat_intel.engine import ThreatIntelEngine
+            candidates = [payload.source_ip or "", payload.destination_ip or "", payload.message or ""]
+            tip = ThreatIntelEngine(db, organization_id)
+            ioc_hits = tip.match_indicators(candidates)
+            if ioc_hits:
+                raw_payload["threat_intel_ioc_match"] = [f"{h.ioc_type}:{h.value} ({h.threat_actor})" for h in ioc_hits]
+        except Exception:
+            pass
+
         event = SecurityEvent(
             organization_id=organization_id,
             timestamp=datetime.now(timezone.utc),
@@ -78,7 +91,7 @@ class SIEMEngine:
             mitre_tactic=payload.mitre_tactic,
             mitre_technique_id=payload.mitre_technique_id,
             mitre_technique_name=payload.mitre_technique_name,
-            raw_data_json=json.dumps(payload.raw_data or {})
+            raw_data_json=json.dumps(raw_payload)
         )
         db.add(event)
         db.flush()

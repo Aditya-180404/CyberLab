@@ -665,6 +665,35 @@ export interface ComplianceReportItem {
   report_markdown: string;
 }
 
+// Threat Intelligence & Deception Types
+export interface ThreatIOCItem {
+  id: string;
+  organization_id: string;
+  ioc_type: "IP" | "DOMAIN" | "SHA256";
+  value: string;
+  threat_actor: string;
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  source: string;
+  confidence: number;
+  is_active: boolean;
+  hit_count: number;
+  last_seen?: string;
+  created_at: string;
+}
+
+export interface DeceptionTrapItem {
+  id: string;
+  organization_id: string;
+  name: string;
+  trap_type: "CANARY_FILE" | "DECOY_PORT" | "DECOY_CREDENTIAL";
+  target_indicator: string;
+  description?: string;
+  is_active: boolean;
+  triggered_count: number;
+  last_triggered?: string;
+  created_at: string;
+}
+
 
 
 

@@ -3,7 +3,7 @@ CyberLab Models Package
 """
 from app.models.organization import Organization
 from app.models.site import Site
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, RevokedToken
 from app.models.audit import AuditLog
 from app.models.topology import Topology
 from app.models.segment import NetworkSegment
@@ -24,9 +24,10 @@ from app.models.purple_team import (
 from app.models.vulnerability import (
     Vulnerability, AssetVulnerability, VulnerabilitySeverity, VulnerabilityStatus
 )
+from app.models.threat_intel import ThreatIOC, DeceptionTrap
 
 __all__ = [
-    "Organization", "Site", "User", "UserRole", "AuditLog",
+    "Organization", "Site", "User", "UserRole", "RevokedToken", "AuditLog",
     "Topology", "NetworkSegment", "NetworkDevice", "DeviceType", "NetworkConnection",
     "VirtualMachine", "PowerState",
     "Agent", "AgentStatus", "AgentTelemetry",
@@ -36,5 +37,6 @@ __all__ = [
     "SOARPlaybook", "SOARAction", "ActionType", "ActionStatus",
     "SimulationScenario", "SimulationExecution", "ValidationResult",
     "SimulationStatus", "DetectionStatus",
-    "Vulnerability", "AssetVulnerability", "VulnerabilitySeverity", "VulnerabilityStatus"
+    "Vulnerability", "AssetVulnerability", "VulnerabilitySeverity", "VulnerabilityStatus",
+    "ThreatIOC", "DeceptionTrap"
 ]

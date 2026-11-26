@@ -17,6 +17,7 @@ import { DigitalTwinView } from "../components/digital_twin/DigitalTwinView";
 import { PurpleTeamStudio } from "../components/purple_team/PurpleTeamStudio";
 import { VulnerabilityManagement } from "../components/vulnerability/VulnerabilityManagement";
 import { EnterpriseSitesView } from "../components/enterprise/EnterpriseSitesView";
+import { ThreatIntelDeceptionView } from "../components/threat_intel/ThreatIntelDeceptionView";
 import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
@@ -94,6 +95,8 @@ export default function SOCDashboard() {
           <AssetInventory authToken={authToken} />
         ) : currentTab === "SIEM & Correlation" ? (
           <SIEMDashboard authToken={authToken} />
+        ) : currentTab === "Threat Intel & NDR" ? (
+          <ThreatIntelDeceptionView authToken={authToken} />
         ) : currentTab === "Incident Response" ? (
           <IncidentResponseSOAR authToken={authToken} />
         ) : currentTab === "Digital Twin" ? (

@@ -22,5 +22,11 @@ class TokenPayload(BaseModel):
     username: str
     role: str
     exp: int
+    jti: Optional[str] = None
     iss: str
     aud: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=10, max_length=128)

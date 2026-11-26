@@ -54,6 +54,7 @@ def list_vms(
     if current_user.role != UserRole.SUPER_ADMIN and current_user.organization_id:
         query = query.filter(VirtualMachine.organization_id == current_user.organization_id)
     vms = query.offset(skip).limit(limit).all()
+    vms = vm_manager.sync_running_states(db, vms)
     return [_format_vm_response(vm) for vm in vms]
 
 
@@ -122,6 +123,7 @@ def get_vm(
     vm = db.query(VirtualMachine).filter(VirtualMachine.id == vm_id).first()
     if not vm:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Virtual machine not found")
+    vm_manager.sync_running_states(db, [vm])
     return _format_vm_response(vm)
 
 

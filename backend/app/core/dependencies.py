@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.database.session import get_db
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, RevokedToken
 from app.core.security import decode_access_token
 import jwt
 
@@ -29,10 +29,17 @@ async def get_current_user(
     try:
         payload = decode_access_token(token)
         user_id: str = payload.get("sub")
+        jti: Optional[str] = payload.get("jti")
         if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token payload missing subject identifier",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if jti and db.query(RevokedToken).filter(RevokedToken.jti == jti).first():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication token has been revoked",
                 headers={"WWW-Authenticate": "Bearer"},
             )
     except jwt.ExpiredSignatureError:

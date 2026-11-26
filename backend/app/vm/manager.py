@@ -30,6 +30,48 @@ class VMManager:
     def set_adapter(self, adapter: HypervisorAdapter):
         self.adapter = adapter
 
+    def sync_running_states(self, db: Session, vms: List[VirtualMachine]) -> List[VirtualMachine]:
+        """Syncs DB power_state for VMs against the live hypervisor inventory."""
+        if not vms:
+            return vms
+
+        try:
+            if hasattr(self.adapter, "try_list_running_vms"):
+                running_list = self.adapter.try_list_running_vms()
+                if running_list is None:
+                    return vms
+            else:
+                running_list = self.adapter.list_running_vms()
+        except Exception as e:
+            logger.warning(f"Live VM state sync skipped: {e}")
+            return vms
+
+        running_set = {
+            os.path.realpath(p) if os.path.exists(p) else p
+            for p in running_list
+        }
+
+        changed = False
+        for vm in vms:
+            norm_path = os.path.realpath(vm.config_path) if os.path.exists(vm.config_path) else vm.config_path
+            is_running = (norm_path in running_set) or (vm.config_path in running_set)
+            if is_running:
+                target_state = PowerState.RUNNING
+            elif vm.power_state == PowerState.SUSPENDED:
+                target_state = PowerState.SUSPENDED
+            else:
+                target_state = PowerState.STOPPED
+
+            if vm.power_state != target_state:
+                vm.power_state = target_state
+                changed = True
+
+        if changed:
+            db.commit()
+            for vm in vms:
+                db.refresh(vm)
+        return vms
+
     def discover_local_vms(
         self, db: Session, organization_id: str, custom_paths: Optional[List[str]] = None
     ) -> Dict[str, Any]:
@@ -38,7 +80,13 @@ class VMManager:
         if custom_paths:
             paths_to_scan.extend(custom_paths)
 
-        running_vms = set(self.adapter.list_running_vms())
+        running_raw = (
+            self.adapter.try_list_running_vms()
+            if hasattr(self.adapter, "try_list_running_vms")
+            else self.adapter.list_running_vms()
+        )
+        running_known = running_raw is not None
+        running_vms = set(running_raw or [])
         discovered_records: List[VirtualMachine] = []
 
         for root_path in paths_to_scan:
@@ -77,8 +125,11 @@ class VMManager:
                                 vm.network_adapters_json = json.dumps(meta["network_adapters"])
                                 vm.is_vulnerable_target = meta["is_vulnerable_target"]
                                 vm.safety_warning = meta["safety_warning"]
-                                if is_running:
-                                    vm.power_state = PowerState.RUNNING
+                                if running_known:
+                                    if is_running:
+                                        vm.power_state = PowerState.RUNNING
+                                    elif vm.power_state != PowerState.SUSPENDED:
+                                        vm.power_state = PowerState.STOPPED
 
                             db.flush()
                             discovered_records.append(vm)

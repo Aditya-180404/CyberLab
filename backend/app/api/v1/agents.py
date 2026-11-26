@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header, status
 from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.user import User, UserRole
+from app.models.organization import Organization
 from app.models.agent import Agent, AgentStatus, AgentTelemetry
 from app.models.audit import AuditLog
 from app.schemas.agent import (
@@ -17,7 +18,13 @@ from app.schemas.agent import (
     AgentTelemetryBatch, AgentResponse, AgentDetailResponse
 )
 from app.core.dependencies import get_current_user, require_role
-from app.core.security import get_password_hash, verify_password
+from app.core.security import get_password_hash, verify_password, decode_access_token
+from app.core.config import settings
+from app.models.asset import Asset
+from app.models.siem import EventCategory, EventSeverity
+from app.schemas.siem import SecurityEventCreate
+from app.siem.engine import siem_engine
+from app.threat_intel.engine import ThreatIntelEngine
 
 router = APIRouter()
 
@@ -92,15 +99,40 @@ def _format_agent_response(agent: Agent) -> AgentResponse:
 
 
 @router.post("/agents/register", response_model=AgentRegisterResponse, status_code=status.HTTP_201_CREATED)
-def register_agent(payload: AgentRegisterRequest, db: Session = Depends(get_db)):
+def register_agent(
+    payload: AgentRegisterRequest,
+    x_enrollment_key: Optional[str] = Header(None, alias="X-CyberLab-Enrollment-Key"),
+    authorization: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
     """Registers an autonomous Linux agent and generates unique cryptographic credentials."""
+    if settings.AGENT_ENROLLMENT_KEY:
+        key_valid = bool(x_enrollment_key and secrets.compare_digest(x_enrollment_key, settings.AGENT_ENROLLMENT_KEY))
+        admin_valid = False
+        if not key_valid and authorization and authorization.startswith("Bearer "):
+            try:
+                claims = decode_access_token(authorization.split(" ", 1)[1])
+                admin_valid = claims.get("role") in [UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN]
+            except Exception:
+                admin_valid = False
+        if not key_valid and not admin_valid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or missing X-CyberLab-Enrollment-Key"
+            )
+
     raw_token = f"cla_{secrets.token_urlsafe(32)}"
     token_hash = get_password_hash(raw_token)
 
     agent_id = f"cl-agent-{secrets.token_hex(4)}"
 
-    # Default to first organization or baseline
-    org_id = "default-org"
+    # Default to first organization or create baseline if missing
+    org = db.query(Organization).first()
+    if not org:
+        org = Organization(id="default-org", name="CyberLab Primary Research Lab", slug="primary-lab")
+        db.add(org)
+        db.flush()
+    org_id = org.id
 
     agent = Agent(
         id=agent_id,
@@ -185,7 +217,92 @@ def ingest_telemetry(
     )
     db.add(record)
     agent.last_heartbeat = datetime.now(timezone.utc)
+
+    # Sync installed package inventory onto linked Asset for accurate CVE matching
+    if payload.installed_packages:
+        asset = db.query(Asset).filter(
+            (Asset.agent_id == agent.id) | (Asset.name == agent.hostname)
+        ).first()
+        if asset:
+            try:
+                existing_svcs = json.loads(asset.services_json or "[]")
+            except Exception:
+                existing_svcs = []
+            # Keep port records + append latest package records
+            port_entries = [s for s in existing_svcs if isinstance(s, dict) and "port" in s and "package" not in s]
+            pkg_entries = [
+                {"package": p.get("package", ""), "version": p.get("version", ""), "service": f"{p.get('package', '')} {p.get('version', '')}"}
+                for p in (payload.installed_packages or [])[:120]
+            ]
+            asset.services_json = json.dumps(port_entries + pkg_entries)
+
     db.commit()
+
+    # Forward FIM alerts, auth events, and Threat Intel remote socket matches into SIEM pipeline
+    try:
+        for fim in (payload.fim_alerts or []):
+            fpath = fim.get("path") or fim.get("file_path") or "unknown"
+            siem_engine.ingest_event(
+                db,
+                SecurityEventCreate(
+                    category=EventCategory.FILE_INTEGRITY,
+                    severity=fim.get("severity", EventSeverity.HIGH),
+                    action=fim.get("action", "MODIFIED"),
+                    message=f"Agent FIM alert on {agent.hostname}: {fim.get('message', fpath)}",
+                    hostname=agent.hostname,
+                    source_ip=agent.ip_address,
+                    mitre_tactic="Credential Access" if "shadow" in fpath or "passwd" in fpath else "Persistence",
+                    mitre_technique_id="T1003.008" if "shadow" in fpath or "passwd" in fpath else "T1083",
+                    raw_data={"agent_id": agent.id, **fim},
+                ),
+                organization_id=agent.organization_id,
+            )
+
+        for auth_evt in (payload.auth_events or []):
+            siem_engine.ingest_event(
+                db,
+                SecurityEventCreate(
+                    category=auth_evt.get("category", EventCategory.AUTHENTICATION),
+                    severity=auth_evt.get("severity", EventSeverity.MEDIUM),
+                    action=auth_evt.get("action", "FAILURE"),
+                    message=auth_evt.get("message", "Authentication event"),
+                    hostname=agent.hostname,
+                    source_ip=auth_evt.get("source_ip") or agent.ip_address,
+                    mitre_tactic=auth_evt.get("mitre_tactic"),
+                    mitre_technique_id=auth_evt.get("mitre_technique_id"),
+                    raw_data={"agent_id": agent.id, **auth_evt},
+                ),
+                organization_id=agent.organization_id,
+            )
+
+        # Match outbound remote socket IPs against Threat Intel IOCs
+        remote_ips = []
+        for conn in (payload.network_connections or []):
+            remote = conn.get("remote") or ""
+            if ":" in remote:
+                remote_ips.append(remote.rsplit(":", 1)[0])
+        if remote_ips:
+            tip = ThreatIntelEngine(db, agent.organization_id)
+            hits = tip.match_indicators(remote_ips)
+            for hit in hits:
+                siem_engine.ingest_event(
+                    db,
+                    SecurityEventCreate(
+                        category=EventCategory.NETWORK_CONNECTION,
+                        severity=EventSeverity.CRITICAL,
+                        action="IOC_MATCH",
+                        message=f"IOC_MATCH: Host {agent.hostname} active socket connected to {hit.value} ({hit.threat_actor})",
+                        hostname=agent.hostname,
+                        source_ip=agent.ip_address,
+                        destination_ip=hit.value,
+                        mitre_tactic="Command and Control",
+                        mitre_technique_id="T1071",
+                        raw_data={"agent_id": agent.id, "threat_intel_ioc_match": hit.value, "threat_actor": hit.threat_actor},
+                    ),
+                    organization_id=agent.organization_id,
+                )
+    except Exception:
+        pass
 
     return {"status": "ingested", "records": len(payload.processes or [])}
 

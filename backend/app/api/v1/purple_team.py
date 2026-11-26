@@ -8,9 +8,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.purple_team import SimulationExecution
-from app.api.v1.auth import get_current_user
+from app.core.dependencies import get_current_user, require_role
 from app.purple_team.engine import PurpleTeamEngine
 from app.schemas.purple_team import (
     SimulationScenarioResponse, ExecuteScenarioRequest, SimulationExecutionResponse,
@@ -36,7 +36,7 @@ def list_simulation_scenarios(
 def execute_atomic_simulation(
     req: ExecuteScenarioRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SOC_MANAGER, UserRole.SOC_ANALYST]))
 ):
     """Execute a single atomic attack simulation scenario and validate detection response."""
     try:
@@ -87,7 +87,7 @@ def execute_atomic_simulation(
 def run_purple_team_campaign(
     req: RunCampaignRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.ORG_ADMIN, UserRole.SOC_MANAGER, UserRole.SOC_ANALYST]))
 ):
     """Execute an automated batch of atomic simulations to measure overall defensive posture."""
     try:

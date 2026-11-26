@@ -17,15 +17,19 @@ from app.network.driver_interface import NetworkDriver
 from app.network.simulation_driver import SimulationDriver
 from app.network.linux_driver import LinuxKernelDriver
 from app.network.safety import HostProtectionValidator, HostProtectionError
+from app.core.config import settings
 
 logger = logging.getLogger("cyberlab.network.manager")
 
 
 class NetworkEngineManager:
     def __init__(self, driver: NetworkDriver = None):
-        # Default to SimulationDriver which safely runs in sandbox/CI environments
-        # LinuxKernelDriver is used when real CAP_NET_ADMIN / sudo is configured
-        self.driver = driver or SimulationDriver()
+        if driver is not None:
+            self.driver = driver
+        elif settings.NETWORK_ENGINE_DRIVER.lower() == "kernel":
+            self.driver = LinuxKernelDriver()
+        else:
+            self.driver = SimulationDriver()
 
     def set_driver(self, driver: NetworkDriver):
         self.driver = driver

@@ -44,6 +44,7 @@ class AgentTelemetryBatch(BaseModel):
     processes: Optional[List[Dict[str, Any]]] = []
     auth_events: Optional[List[Dict[str, Any]]] = []
     fim_alerts: Optional[List[Dict[str, Any]]] = []
+    installed_packages: Optional[List[Dict[str, str]]] = []
 
 
 class AgentResponse(BaseModel):
