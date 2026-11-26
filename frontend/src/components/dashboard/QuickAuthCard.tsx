@@ -12,10 +12,17 @@ const SEED_ACCOUNTS = [
   { username: "auditor", role: "auditor", pass: "Auditor@CyberLab2026!", label: "Auditor" },
 ];
 
-export function QuickAuthCard({ onLoginSuccess }: { onLoginSuccess: (user: UserProfile, token: string) => void }) {
+export function QuickAuthCard({
+  onLoginSuccess,
+  currentUsername,
+}: {
+  onLoginSuccess: (user: UserProfile, token: string) => void;
+  currentUsername?: string | null;
+}) {
   const [loading, setLoading] = useState(false);
   const [activeUser, setActiveUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const effectiveUser = currentUsername ?? activeUser;
 
   const handleQuickLogin = async (acc: typeof SEED_ACCOUNTS[0]) => {
     setLoading(true);
@@ -33,8 +40,8 @@ export function QuickAuthCard({ onLoginSuccess }: { onLoginSuccess: (user: UserP
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur shadow-sm">
-      <div className="flex items-center space-x-2 mb-3 border-b border-slate-800 pb-3">
+    <div className="cyber-card rounded-xl p-5 backdrop-blur h-full">
+      <div className="flex items-center space-x-2 mb-3 border-b border-slate-800/80 pb-3">
         <KeyRound className="w-4 h-4 text-cyan-400" />
         <h2 className="text-sm font-semibold tracking-wide text-slate-100 uppercase font-mono">
           RBAC Session & Authentication
@@ -42,7 +49,7 @@ export function QuickAuthCard({ onLoginSuccess }: { onLoginSuccess: (user: UserP
       </div>
 
       <p className="text-xs text-slate-400 mb-3">
-        Select a seeded role to test authenticated endpoints, permission guards, and audit trail generation:
+        Select a role profile to authenticate API actions, permission guards, and audit trail logging:
       </p>
 
       {error && (
@@ -54,7 +61,7 @@ export function QuickAuthCard({ onLoginSuccess }: { onLoginSuccess: (user: UserP
 
       <div className="grid grid-cols-2 gap-2.5">
         {SEED_ACCOUNTS.map((acc) => {
-          const isCurrent = activeUser === acc.username;
+          const isCurrent = effectiveUser === acc.username;
           return (
             <button
               key={acc.username}

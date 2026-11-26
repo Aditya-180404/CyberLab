@@ -11,8 +11,8 @@ export function SystemHealthCard({ health, loading, error, onRefresh }: {
   onRefresh: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur shadow-sm">
-      <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+    <div className="cyber-card rounded-xl p-5 backdrop-blur">
+      <div className="flex items-center justify-between mb-4 border-b border-slate-800/80 pb-3">
         <div className="flex items-center space-x-2">
           <Activity className="w-4 h-4 text-cyan-400" />
           <h2 className="text-sm font-semibold tracking-wide text-slate-100 uppercase font-mono">
@@ -22,9 +22,9 @@ export function SystemHealthCard({ health, loading, error, onRefresh }: {
         <button
           onClick={onRefresh}
           disabled={loading}
-          className="text-xs text-slate-400 hover:text-cyan-400 font-mono transition disabled:opacity-50"
+          className="text-xs text-slate-400 hover:text-cyan-300 font-mono px-2.5 py-1 rounded-md border border-slate-800 bg-slate-950/70 hover:border-cyan-500/30 transition disabled:opacity-50"
         >
-          {loading ? "Checking..." : "[ Refresh Probe ]"}
+          {loading ? "Checking..." : "Refresh Probe"}
         </button>
       </div>
 

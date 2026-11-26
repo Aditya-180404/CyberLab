@@ -53,7 +53,7 @@ def list_playbooks(
     db: Session = Depends(get_db)
 ):
     """Lists available automated containment playbooks, ensuring baseline playbooks are seeded."""
-    soar_engine.ensure_default_playbooks(db)
+    soar_engine.ensure_default_playbooks(db, organization_id=current_user.organization_id)
     playbooks = db.query(SOARPlaybook).filter(SOARPlaybook.is_enabled == True).all()
     return [SOARPlaybookResponse.model_validate(p) for p in playbooks]
 
@@ -66,7 +66,7 @@ def execute_playbook(
     db: Session = Depends(get_db)
 ):
     """Triggers playbook execution against a target entity, passing through human approval if required."""
-    soar_engine.ensure_default_playbooks(db)
+    soar_engine.ensure_default_playbooks(db, organization_id=current_user.organization_id)
     pb = db.query(SOARPlaybook).filter(SOARPlaybook.id == playbook_id).first()
     if not pb:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Playbook '{playbook_id}' not found")
@@ -83,7 +83,8 @@ def execute_playbook(
         incident_id=payload.incident_id,
         requested_by=current_user.username,
         parameters=payload.parameters,
-        auto_approve=auto_approve
+        auto_approve=auto_approve,
+        organization_id=current_user.organization_id,
     )
 
     audit = AuditLog(

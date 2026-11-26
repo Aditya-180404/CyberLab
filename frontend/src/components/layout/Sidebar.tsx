@@ -45,18 +45,18 @@ export function Sidebar({ currentTab, onSelectTab }: { currentTab: string; onSel
     <aside className="w-64 border-r border-slate-800 bg-slate-950/80 backdrop-blur flex flex-col justify-between shrink-0 h-screen sticky top-0">
       <div>
         {/* Brand */}
-        <div className="p-5 border-b border-slate-800 flex items-center space-x-3">
-          <div className="h-9 w-9 rounded-lg bg-cyan-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold shadow-lg shadow-cyan-950/50">
+        <div className="p-5 border-b border-slate-800/90 flex items-center space-x-3 bg-gradient-to-b from-cyan-950/20 to-transparent">
+          <div className="h-9 w-9 rounded-lg bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold shadow-lg shadow-cyan-950/60">
             <Cpu className="w-5 h-5 text-cyan-400 animate-pulse" />
           </div>
           <div>
             <div className="font-bold tracking-wider text-slate-100 flex items-center space-x-2">
               <span>CYBERLAB</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-mono">
                 v1.0
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 tracking-tight">Security Platform</p>
+            <p className="text-[11px] text-slate-400 tracking-tight">Unified Security Operations</p>
           </div>
         </div>
 
@@ -94,13 +94,13 @@ export function Sidebar({ currentTab, onSelectTab }: { currentTab: string; onSel
       </div>
 
       {/* System Status Footer */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/60">
+      <div className="p-4 border-t border-slate-800/90 bg-slate-950/70">
         <div className="flex items-center justify-between text-[11px] text-slate-400">
           <span className="flex items-center space-x-1.5">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
-            <span className="text-slate-300 font-mono">HYPERVISOR ACTIVE</span>
+            <span className="text-slate-300 font-mono">SOC ENGINE ONLINE</span>
           </span>
-          <span className="font-mono text-slate-400">Kali Linux</span>
+          <span className="font-mono text-cyan-400/90">Unified v1.0</span>
         </div>
       </div>
     </aside>

@@ -53,14 +53,27 @@ DEFAULT_PLAYBOOKS = [
 
 
 class SOAREngine:
-    def ensure_default_playbooks(self, db: Session, organization_id: str = "default-org") -> None:
+    def _resolve_org_id(self, db: Session, organization_id: Optional[str] = None) -> str:
+        from app.models.organization import Organization
+        if organization_id and organization_id != "default-org":
+            return organization_id
+        org = db.query(Organization).first()
+        if org:
+            return org.id
+        org = Organization(id="default-org", name="CyberLab Primary Research Lab", slug="primary-lab")
+        db.add(org)
+        db.commit()
+        return org.id
+
+    def ensure_default_playbooks(self, db: Session, organization_id: Optional[str] = None) -> None:
         """Seeds baseline containment playbooks if not present."""
+        resolved_org = self._resolve_org_id(db, organization_id)
         for pb_def in DEFAULT_PLAYBOOKS:
             exists = db.query(SOARPlaybook).filter(SOARPlaybook.id == pb_def["id"]).first()
             if not exists:
                 pb = SOARPlaybook(
                     id=pb_def["id"],
-                    organization_id=organization_id,
+                    organization_id=resolved_org,
                     name=pb_def["name"],
                     description=pb_def["description"],
                     trigger_event=pb_def["trigger_event"],
@@ -83,11 +96,12 @@ class SOAREngine:
         requested_by: str = "system",
         parameters: Optional[Dict[str, Any]] = None,
         auto_approve: bool = False,
-        organization_id: str = "default-org"
+        organization_id: Optional[str] = None
     ) -> SOARAction:
         """Queues a containment action, either auto-executing or entering the approval gate."""
+        resolved_org = self._resolve_org_id(db, organization_id)
         action = SOARAction(
-            organization_id=organization_id,
+            organization_id=resolved_org,
             playbook_id=playbook_id,
             action_type=action_type,
             target_type=target_type,

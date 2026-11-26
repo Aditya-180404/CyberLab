@@ -57,13 +57,26 @@ MITRE_BASELINE_TACTICS = {
 
 
 class SIEMEngine:
+    def _resolve_org_id(self, db: Session, organization_id: Optional[str] = None) -> str:
+        from app.models.organization import Organization
+        if organization_id and organization_id != "default-org":
+            return organization_id
+        org = db.query(Organization).first()
+        if org:
+            return org.id
+        org = Organization(id="default-org", name="CyberLab Primary Research Lab", slug="primary-lab")
+        db.add(org)
+        db.commit()
+        return org.id
+
     def ingest_event(
         self,
         db: Session,
         payload: SecurityEventCreate,
-        organization_id: str = "default-org"
+        organization_id: Optional[str] = None
     ) -> SecurityEvent:
         """Normalizes and persists an event, then evaluates detection rules and correlations."""
+        organization_id = self._resolve_org_id(db, organization_id)
         raw_payload = dict(payload.raw_data or {})
 
         # Correlate against active Threat Intelligence IOCs (non-fatal if no org exists)

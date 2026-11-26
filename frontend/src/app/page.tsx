@@ -17,7 +17,7 @@ import { PurpleTeamStudio } from "../components/purple_team/PurpleTeamStudio";
 import { VulnerabilityManagement } from "../components/vulnerability/VulnerabilityManagement";
 import { EnterpriseSitesView } from "../components/enterprise/EnterpriseSitesView";
 import { ThreatIntelDeceptionView } from "../components/threat_intel/ThreatIntelDeceptionView";
-import { fetchSystemHealth, fetchAuditLogs } from "../lib/api";
+import { fetchSystemHealth, fetchAuditLogs, fetchCurrentUser } from "../lib/api";
 import { HealthResponse, UserProfile, AuditLogItem } from "../lib/types";
 
 export default function SOCDashboard() {
@@ -58,6 +58,18 @@ export default function SOCDashboard() {
 
   useEffect(() => {
     loadHealth();
+    const savedToken = localStorage.getItem("cyberlab_token");
+    if (savedToken) {
+      fetchCurrentUser(savedToken)
+        .then((user) => {
+          setCurrentUser(user);
+          setAuthToken(savedToken);
+          loadAudit(savedToken);
+        })
+        .catch(() => {
+          localStorage.removeItem("cyberlab_token");
+        });
+    }
     const interval = setInterval(loadHealth, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -104,29 +116,81 @@ export default function SOCDashboard() {
           <VulnerabilityManagement authToken={authToken} />
         ) : currentTab === "Multi-Site Fleet" ? (
           <EnterpriseSitesView authToken={authToken} />
+        ) : currentTab === "Audit Trail" ? (
+          <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
+            <div className="cyber-card rounded-xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-lg font-bold text-white">Security Audit Trail</h1>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Immutable record of logins, agent enrollments, topology changes, and SOAR containment actions.
+                  </p>
+                </div>
+                {authToken && (
+                  <button
+                    onClick={() => loadAudit(authToken)}
+                    className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-cyan-300 transition"
+                  >
+                    Refresh Logs
+                  </button>
+                )}
+              </div>
+            </div>
+            <RecentAuditCard logs={auditLogs} loading={auditLoading} />
+          </main>
+        ) : currentTab === "Settings & RBAC" ? (
+          <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <QuickAuthCard onLoginSuccess={handleLoginSuccess} currentUsername={currentUser?.username} />
+              <SystemHealthCard
+                health={health}
+                loading={healthLoading}
+                error={healthError}
+                onRefresh={loadHealth}
+              />
+            </div>
+          </main>
         ) : (
           <main className="p-6 space-y-6 max-w-7xl mx-auto w-full">
             {/* Welcome Banner */}
-            <div className="rounded-xl border border-slate-800 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/30 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg">
+            <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-950 via-slate-900/95 to-cyan-950/35 p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-5 shadow-xl shadow-black/50">
               <div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <h1 className="text-xl font-bold tracking-tight text-white">
                     CyberLab Security Operations Center
                   </h1>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    ALL 12 MODULES OPERATIONAL - v1.0 RELEASE
+                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    UNIFIED CONTROL PLANE • v1.0
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                  Central management control plane for isolated network topologies, distributed multi-OS EDR agents, SIEM/NDR telemetry, threat intelligence, and purple-team validation.
+                <p className="text-xs text-slate-300/80 mt-2 max-w-2xl leading-relaxed">
+                  Centralized enterprise SOC for multi-OS EDR telemetry, firewall/NDR syslog ingestion, threat intelligence IOC matching, deception traps, SOAR containment, topological attack-path modeling, and purple-team validation.
                 </p>
               </div>
-              <div className="flex items-center space-x-3 shrink-0">
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 <button
                   onClick={() => setCurrentTab("Endpoint Fleet")}
-                  className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold font-mono shadow-md shadow-cyan-950 transition"
+                  className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold font-mono shadow-lg shadow-cyan-950/60 transition"
                 >
-                  Inspect Endpoint Fleet →
+                  Endpoint Fleet →
+                </button>
+                <button
+                  onClick={() => setCurrentTab("SIEM & Correlation")}
+                  className="px-3 py-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 hover:border-cyan-500/40 text-xs font-mono transition"
+                >
+                  SIEM Alerts
+                </button>
+                <button
+                  onClick={() => setCurrentTab("Threat Intel & NDR")}
+                  className="px-3 py-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 hover:border-cyan-500/40 text-xs font-mono transition"
+                >
+                  Threat Intel & NDR
+                </button>
+                <button
+                  onClick={() => setCurrentTab("Network Studio")}
+                  className="px-3 py-2 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 hover:border-cyan-500/40 text-xs font-mono transition"
+                >
+                  Network Graph
                 </button>
               </div>
             </div>
@@ -142,7 +206,7 @@ export default function SOCDashboard() {
                 />
               </div>
               <div>
-                <QuickAuthCard onLoginSuccess={handleLoginSuccess} />
+                <QuickAuthCard onLoginSuccess={handleLoginSuccess} currentUsername={currentUser?.username} />
               </div>
             </div>
 
